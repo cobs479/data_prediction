@@ -14,7 +14,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
 
-def predict_xgboost(field, date):
+def predict_xgboost(field, start_date, end_date):
     train_file_path = 'data/weather_2021.csv'
     predict_file_path = 'data/weather_2020.csv'
 
@@ -102,51 +102,48 @@ def predict_xgboost(field, date):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    display_graph(X_predict_full, preds, date)
+    display_graph(X_predict_full, preds, start_date, end_date)
 
 
-def display_graph(X_predict_full, preds, date):
-    # Convert the selected date to a formatted string (dd/mm/yyyy)
-    date_str = date.strftime('%d/%m/%Y')
+def display_graph(X_predict, preds, start_date, end_date):
+    # Ensure Hour column is properly formatted as HH:MM
+    X_predict['Hour'] = X_predict['Hour'].astype(str).str.zfill(4)
+    X_predict['Formatted Hour'] = X_predict['Hour'].str[:2] + \
+        ":" + X_predict['Hour'].str[2:]
 
-    day = X_predict_full['Day']
-    month = X_predict_full['Month']
-    year = X_predict_full['Year']
-    location = X_predict_full['Location']
+    # Convert date columns into a full datetime format (YYYY-MM-DD HH:MM)
+    X_predict['DateTime'] = pd.to_datetime(
+        X_predict[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
+        ' ' + X_predict['Formatted Hour']
+    )
 
-    # Convert date columns into formatted date strings
-    dates = pd.to_datetime(X_predict_full[['Year', 'Month', 'Day']])
-    dates_formatted = dates.dt.strftime('%d/%m/%Y').values
+    # Mapping numerical locations to readable names
+    location_mapping = {
+        1: "Batu Muda",
+        2: "Petaling Jaya",
+        3: "Cheras"
+    }
+    X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    dates_array = dates_formatted
-    locations_array = location.values
+    # Create a DataFrame for display
+    results_df = pd.DataFrame({
+        'Date-Time': X_predict['DateTime'],
+        'Location': X_predict['Location'],
+        'Predicted Value': preds
+    })
 
-    # Filter rows where the date matches the selected date
-    filtered_indices = dates_formatted == date_str
-    filtered_dates = dates_array[filtered_indices]
-    filtered_preds = preds[filtered_indices]
-    filtered_locations = locations_array[filtered_indices]
+    # Convert start_date and end_date to datetime format
+    start_datetime = pd.to_datetime(start_date.strftime('%Y-%m-%d') + ' 00:00')
+    end_datetime = pd.to_datetime(end_date.strftime('%Y-%m-%d') + ' 23:00')
 
-    # If no data found for the selected date, show an error
-    if len(filtered_preds) == 0:
-        st.error(f"No predictions found for the date {date_str}")
-        return
+    # Filter data within the date range
+    results_df = results_df[(results_df['Date-Time'] >= start_datetime) &
+                            (results_df['Date-Time'] <= end_datetime)]
 
-    # Create the figure
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Plot predictions for each unique location on the selected date
-    for loc in set(filtered_locations):  # Using set to avoid duplicate locations
-        loc_indices = filtered_locations == loc
-        loc_dates = filtered_dates[loc_indices]
-        loc_target = filtered_preds[loc_indices]
-
-        ax.plot(loc_dates, loc_target, label=loc, marker='o')
-
-    ax.set_title(f'Predicted Target on {date_str}')
-    ax.set_xlabel('Date (dd/mm/yyyy)')
-    ax.set_ylabel('Predicted Target')
-    ax.set_xticklabels(filtered_dates, rotation=45)  # Rotate x labels
-
-    # Display the plot using Streamlit
-    st.pyplot(fig)
+    # Display filtered table
+    if results_df.empty:
+        st.error(f"No predictions found for selected locations from {
+                 start_date} to {end_date}")
+    else:
+        st.write(f"### Predictions from {start_date} to {end_date}")
+        st.dataframe(results_df, hide_index=True)
