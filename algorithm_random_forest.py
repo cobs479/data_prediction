@@ -162,6 +162,14 @@ def display_graph(X_predict, preds, start_date, end_date):
     # Convert date columns into full datetime format
     X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
 
+    # **Mapping numerical locations to readable names (Same as display_table)**
+    location_mapping = {
+        1: "Batu Muda",
+        2: "Petaling Jaya",
+        3: "Cheras"
+    }
+    X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
+
     # Convert selected date range into formatted strings for display
     start_date_str = start_date.strftime('%d/%m/%Y')
     end_date_str = end_date.strftime('%d/%m/%Y')

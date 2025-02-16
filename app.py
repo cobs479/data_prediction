@@ -6,25 +6,33 @@ from algorithm_xgboost import predict_xgboost
 # Title of the app
 st.title("Weather Prediction")
 
-# Radio button
-selected_algorithm = st.radio("Select a Algorithm:", [
-    "Random Forest", "XGBoost"], key="radio_algorithm")
+# Initialize session state for form submission
+if "prediction_started" not in st.session_state:
+    st.session_state.prediction_started = False
 
-# Dropdown (selectbox) to choose fields
-columns = ["Please select field", "PM10",  "PM25", "SO2", "NO2", "O3",
-           "CO", "Humidity", "Temperature", "Wind Direction", "Wind Speed", "Global Radiation", "Usage"]
-selected_field = st.selectbox(
-    "Select field to predict:", columns, key="dropdown_field")
+# Create a form for input selection
+with st.form("prediction_form"):
+    # Radio button for algorithm selection
+    selected_algorithm = st.radio("Select an Algorithm:", [
+        "Random Forest", "XGBoost"], key="radio_algorithm")
 
-# Date picker to select a date range
-selected_start_date = st.date_input(
-    "Select 'From' Date", pd.to_datetime("today"), key="start_date")
-selected_end_date = st.date_input(
-    "Select 'To' Date", pd.to_datetime("today"), key="end_date")
+    # Dropdown (selectbox) to choose fields
+    columns = ["Please select field", "PM10", "PM25", "SO2", "NO2", "O3",
+               "CO", "Humidity", "Temperature", "Wind Direction", "Wind Speed", "Global Radiation", "Usage"]
+    selected_field = st.selectbox(
+        "Select field to predict:", columns, key="dropdown_field")
 
+    # Date pickers for date range selection
+    selected_start_date = st.date_input(
+        "Select 'From' Date", pd.to_datetime("today"), key="start_date")
+    selected_end_date = st.date_input(
+        "Select 'To' Date", pd.to_datetime("today"), key="end_date")
 
-predict_btn = st.button("Predict")
-if predict_btn:
+    # Submit button inside the form
+    submitted = st.form_submit_button("Predict")
+
+# Process the form submission
+if submitted:
     # Validation: Check if the user has selected a valid column (not the default)
     if selected_field == "Please select field":
         st.error("Please select a field to proceed with prediction.")
@@ -38,16 +46,33 @@ if predict_btn:
     elif not selected_algorithm:
         st.error("Please select an algorithm to proceed with prediction.")
     else:
+        # **Set session state to prevent reset**
+        st.session_state.prediction_started = True
+        st.session_state.selected_field = selected_field
+        st.session_state.selected_algorithm = selected_algorithm
+        st.session_state.selected_start_date = selected_start_date
+        st.session_state.selected_end_date = selected_end_date
+
         st.success(f"Prediction started with Algorithm: {selected_algorithm}, Field: {
             selected_field}, From Date: {selected_start_date} and End Date: {selected_end_date}")
-        # Call the function for prediction
+
+        # Call the prediction function based on the selected algorithm
         selected_field = selected_field.replace(" ", "")
-        print("Field : ", selected_field)
-        print("Start Date : ", selected_start_date)
-        print("End Date : ", selected_end_date)
+        print("Field:", selected_field)
+        print("Start Date:", selected_start_date)
+        print("End Date:", selected_end_date)
+
         if selected_algorithm == 'Random Forest':
             predict_random_forest(
                 selected_field, selected_start_date, selected_end_date)
         elif selected_algorithm == 'XGBoost':
             predict_xgboost(selected_field, selected_start_date,
                             selected_end_date)
+
+# Display results if prediction was started
+if st.session_state.prediction_started:
+    print(f"### Showing results for:")
+    print(f"- **Algorithm:** {st.session_state.selected_algorithm}")
+    print(f"- **Field:** {st.session_state.selected_field}")
+    print(f"- **Date Range:** {st.session_state.selected_start_date} to {
+        st.session_state.selected_end_date}")
