@@ -31,6 +31,9 @@ if predict_btn:
     # Validation: Ensure start_date is before or equal to end_date
     elif selected_start_date > selected_end_date:
         st.error("The 'From' date cannot be later than the 'To' date.")
+    # Validation: Ensure start_date and end_date are in the same year
+    elif selected_start_date.year != selected_end_date.year:
+        st.error("Start Date and End Date must be in the same year.")
     # Validation: Check if an algorithm is selected
     elif not selected_algorithm:
         st.error("Please select an algorithm to proceed with prediction.")

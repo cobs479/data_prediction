@@ -16,7 +16,13 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 def predict_random_forest(field, start_date, end_date):
     train_file_path = 'data/weather_2021.csv'
-    predict_file_path = 'data/weather_2020.csv'
+    predict_file_path = f'data/weather_{end_date.year}.csv'
+
+    # Check if the prediction file exists
+    if not os.path.exists(predict_file_path):
+        st.error(f"Prediction file for year {
+            end_date.year} not found: {predict_file_path}")
+        return
 
     X = pd.read_csv(train_file_path)
     X_predict = pd.read_csv(predict_file_path)
@@ -101,9 +107,10 @@ def predict_random_forest(field, start_date, end_date):
     print('RMSE:', rmse_score)
 
     display_graph(X_predict, preds, start_date, end_date)
+    display_table(X_predict, preds, start_date, end_date)
 
 
-def display_graph(X_predict, preds, start_date, end_date):
+def display_table(X_predict, preds, start_date, end_date):
     # Ensure Hour column is properly formatted as HH:MM
     X_predict['Hour'] = X_predict['Hour'].astype(str).str.zfill(4)
     X_predict['Formatted Hour'] = X_predict['Hour'].str[:2] + \
@@ -143,5 +150,53 @@ def display_graph(X_predict, preds, start_date, end_date):
         st.error(f"No predictions found for selected locations from {
                  start_date} to {end_date}")
     else:
-        st.write(f"### Predictions from {start_date} to {end_date}")
+        # st.write(f"### Predictions from {start_date} to {end_date}")
         st.dataframe(results_df, hide_index=True)
+
+
+def display_graph(X_predict, preds, start_date, end_date):
+    # Convert date inputs to datetime
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    # Convert date columns into full datetime format
+    X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
+
+    # Convert selected date range into formatted strings for display
+    start_date_str = start_date.strftime('%d/%m/%Y')
+    end_date_str = end_date.strftime('%d/%m/%Y')
+
+    # Filter data within the selected date range
+    mask = (X_predict['DateTime'] >= start_date) & (
+        X_predict['DateTime'] <= end_date)
+    filtered_data = X_predict[mask]
+    filtered_preds = preds[mask]
+
+    # If no data is found, display an error message
+    if filtered_data.empty:
+        st.error(f"No predictions found between {
+                 start_date_str} and {end_date_str}.")
+        return
+
+    # Extract unique locations
+    unique_locations = filtered_data['Location'].unique()
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # Plot predictions for each location
+    for loc in unique_locations:
+        loc_data = filtered_data[filtered_data['Location'] == loc]
+        loc_preds = filtered_preds[filtered_data['Location'] == loc]
+
+        ax.plot(loc_data['DateTime'], loc_preds, label=loc, marker='o')
+
+    # Set graph labels and title
+    ax.set_title(f'Predicted Target from {start_date_str} to {end_date_str}')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Predicted Target')
+    ax.legend(title="Location")
+    plt.xticks(rotation=45)
+
+    # Display the plot in Streamlit
+    st.pyplot(fig)
