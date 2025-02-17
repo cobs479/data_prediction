@@ -152,7 +152,7 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
                             (results_df['Date-Time'] <= end_datetime)]
 
     # Filter data of selected location
-    results_df = results_df[results_df['Location'] == location_select]
+    #results_df = results_df[results_df['Location'] == location_select]
 
     # Display filtered table
     if results_df.empty:
@@ -191,7 +191,7 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
 
     # Filter data within the selected date range
     mask = (X_predict['DateTime'] >= start_date) & (
-        X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
+        X_predict['DateTime'] <= end_date) #& (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
 
