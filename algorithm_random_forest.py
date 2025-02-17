@@ -143,28 +143,49 @@ def generate_future_data(X, start_date, end_date, location_select):
 def display_table(X_predict, preds, start_date, end_date, location_select):
     """Display predictions in a table."""
     
+    # Ensure required columns exist
+    required_cols = ['Year', 'Month', 'Day', 'Hour']
+    for col in required_cols:
+        if col not in X_predict.columns:
+            st.error(f"Missing column '{col}' in X_predict.")
+            return
+
+    # Convert date components to integers
+    X_predict[required_cols] = X_predict[required_cols].fillna(0).astype(int)
+
+    # Convert Hour to formatted time (HH:MM)
     X_predict['Hour'] = X_predict['Hour'].astype(str).str.zfill(4)
     X_predict['Formatted Hour'] = X_predict['Hour'].str[:2] + ":" + X_predict['Hour'].str[2:]
-    X_predict['DateTime'] = pd.to_datetime(
-        X_predict[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
-        ' ' + X_predict['Formatted Hour']
-    )
 
+    # Convert date columns into a full datetime format
+    try:
+        X_predict['DateTime'] = pd.to_datetime(
+            X_predict[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
+            ' ' + X_predict['Formatted Hour']
+        )
+    except Exception as e:
+        st.error(f"Error converting DateTime: {e}")
+        return
+
+    # Mapping numerical locations to readable names
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
+    # Create DataFrame for display
     results_df = pd.DataFrame({
         'Date-Time': X_predict['DateTime'],
         'Location': X_predict['Location'],
         'Predicted Value': preds
     })
 
+    # Convert start_date and end_date to datetime format
     start_datetime = pd.to_datetime(start_date.strftime('%Y-%m-%d') + ' 00:00')
     end_datetime = pd.to_datetime(end_date.strftime('%Y-%m-%d') + ' 23:00')
 
+    # Filter data within the date range
     results_df = results_df[
-        (results_df['Date-Time'] >= start_datetime) & 
-        (results_df['Date-Time'] <= end_datetime) & 
+        (results_df['Date-Time'] >= start_datetime) &
+        (results_df['Date-Time'] <= end_datetime) &
         (results_df['Location'] == location_select)
     ]
 
@@ -176,17 +197,29 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 
 def display_graph(X_predict, preds, start_date, end_date, location_select):
     """Plot prediction results."""
+    
+    # Ensure the Year, Month, and Day columns exist
+    if not all(col in X_predict.columns for col in ['Year', 'Month', 'Day']):
+        st.error("Missing date-related columns in prediction data. Cannot plot graph.")
+        return
 
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
-    X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
-
+    # Ensure Year, Month, and Day are integers and handle missing values
+    X_predict = X_predict.dropna(subset=['Year', 'Month', 'Day']).copy()  # Drop NaN rows
+    X_predict[['Year', 'Month', 'Day']] = X_predict[['Year', 'Month', 'Day']].astype(int)  # Convert to int
+    
+    # Create DateTime column
+    try:
+        X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
+    except Exception as e:
+        st.error(f"Error creating DateTime column: {e}")
+        return
+    
+    # Mapping numerical locations to readable names
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    mask = (X_predict['DateTime'] >= start_date) & (
-        X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
-    
+    # Filter based on selected date range and location
+    mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
 
@@ -194,6 +227,7 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
         st.error(f"No predictions found for {location_select} from {start_date} to {end_date}")
         return
 
+    # Plot
     plt.figure(figsize=(12, 6))
     plt.plot(filtered_data['DateTime'], filtered_preds, marker='o', label=location_select)
     plt.title(f'Predictions from {start_date} to {end_date}')
