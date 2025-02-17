@@ -156,8 +156,17 @@ def predict_random_forest(field, start_date, end_date, location_select):
             if col in data.columns:
                 # ✅ If requested dates exist in historical data, use real values
                 mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
+
                 if mask.any():
-                    future_data[col] = data.loc[mask, col].values[:len(future_data)]
+                    historical_values = data.loc[mask, col].values
+
+                    # ✅ Ensure the length matches `future_data`
+                    if len(historical_values) >= len(future_data):
+                        future_data[col] = historical_values[:len(future_data)]
+                    else:
+                        # ✅ If not enough values, repeat to fill
+                        future_data[col] = np.resize(historical_values, len(future_data))
+
                 else:
                     # ✅ If outside historical range, use the column's mean (if numerical)
                     if np.issubdtype(data[col].dtype, np.number):
