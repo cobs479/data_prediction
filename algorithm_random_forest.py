@@ -110,28 +110,44 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
 
 def generate_future_data(X, start_date, end_date, location_select):
-    """Generate synthetic data for future predictions."""
+    """Generate synthetic data for future predictions with all required columns."""
     
     future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
     
-    # Ensure Year, Month, and Day are extracted correctly
+    # Ensure Year, Month, and Day exist
     future_data = pd.DataFrame({
         'Year': future_dates.year,
         'Month': future_dates.month,
         'Day': future_dates.day
     })
 
-    # Generate hourly values
+    # Generate hourly values (assuming 00:00, 01:00, ..., 23:00 format)
     future_data['Hour'] = np.tile(range(0, 2400, 100), len(future_data) // 24 + 1)[:len(future_data)]
 
     # Ensure location mapping exists
     location_mapping = {"Batu Muda": 1, "Petaling Jaya": 2, "Cheras": 3}
     future_data['LocationInNum'] = location_mapping.get(location_select, 1)
 
-    # Convert to integers
+    # Retrieve training column names
+    training_cols = list(X.columns)  # Get original feature names
+
+    # Fill missing categorical data with mode
+    categorical_cols = [col for col in training_cols if X[col].dtype == "object"]
+    for col in categorical_cols:
+        future_data[col] = X[col].mode()[0] if col in X else "Unknown"
+
+    # Fill missing numerical columns with mean
+    numerical_cols = [col for col in training_cols if X[col].dtype in ['int64', 'float64']]
+    for col in numerical_cols:
+        future_data[col] = X[col].mean() if col in X else 0  # Default to 0 if missing
+
+    # Ensure correct column order
+    future_data = future_data[training_cols]  # Align columns with training set
+
+    # Convert Year, Month, Day to integers
     future_data[['Year', 'Month', 'Day', 'Hour']] = future_data[['Year', 'Month', 'Day', 'Hour']].astype(int)
 
-    # Ensure DateTime column is created
+    # Ensure DateTime column exists
     try:
         future_data['DateTime'] = pd.to_datetime(future_data[['Year', 'Month', 'Day']])
     except Exception as e:
