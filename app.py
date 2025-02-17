@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from model_random_forest import predict_random_forest
+from algorithm_random_forest import predict_random_forest
 from algorithm_xgboost import predict_xgboost
 
 # Title of the app
