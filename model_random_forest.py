@@ -146,7 +146,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data = pd.DataFrame({'datetime': future_dates})
 
     # Add location selection
-    future_data['location'] = location_select
+    future_data['Location'] = location_select
 
     # Ensure features match training data
     feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
