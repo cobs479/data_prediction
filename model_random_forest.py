@@ -142,10 +142,27 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Extract expected features from the trained model
     expected_features = model.named_steps['preprocessor'].get_feature_names_out()
 
+    start_date = pd.to_datetime(str(start_date) + ' 00:00')
+    end_date = pd.to_datetime(str(end_date) + ' 23:00')
+
     # Ensure `future_data` has all required columns
     for col in expected_features:
         if col not in future_data.columns:
-            future_data[col] = 0  # Assign default value if missing
+            if col in data.columns:
+                # ✅ If requested dates exist in historical data, use real values
+                mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
+                if mask.any():
+                    future_data[col] = data.loc[mask, col].values[:len(future_data)]
+                else:
+                    # ✅ If outside historical range, use the column's mean (if numerical)
+                    if np.issubdtype(data[col].dtype, np.number):
+                        future_data[col] = data[col].mean()
+                    else:
+                        # ✅ If categorical, remove the column to prevent errors
+                        future_data.drop(columns=[col], inplace=True, errors='ignore')
+            else:
+                # ✅ If column doesn't exist in data, drop it
+                future_data.drop(columns=[col], inplace=True, errors='ignore')
 
     # Reorder `future_data` to match training feature order
     future_data = future_data[expected_features]
