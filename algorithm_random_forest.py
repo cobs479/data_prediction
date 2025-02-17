@@ -96,10 +96,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
         mae_score = mean_absolute_error(preds, actual_values)
         mse_score = mean_squared_error(preds, actual_values)
         rmse_score = np.sqrt(mse_score)
-        
-        mae_score = mean_absolute_error(preds, X_predict[field] if field in X_predict else y.mean())
-        mse_score = mean_squared_error(preds, X_predict[field] if field in X_predict else y.mean())
-        rmse_score = np.sqrt(mse_score)
 
         print('MAE:', mae_score)
         print('MSE:', mse_score)
