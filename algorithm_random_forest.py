@@ -106,6 +106,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
+    st.dataframe(X_predict)
+
     display_graph(X_predict, preds, start_date, end_date, location_select)
     display_table(X_predict, preds, start_date, end_date, location_select)
 
