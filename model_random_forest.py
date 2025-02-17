@@ -158,7 +158,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # 🔥 Step 1: Fill missing values using historical data when available
     for col in trained_feature_cols:
         clean_col = col.split("__")[-1]  # Handles feature transformation names
-        
+
         if clean_col in data.columns:
             mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
 
@@ -180,42 +180,27 @@ def predict_random_forest(field, start_date, end_date, location_select):
                     # ✅ If categorical, drop to prevent errors
                     future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
 
-    # 🔥 Step 2: Handle missing columns
-    missing_cols = set(trained_feature_cols) - set(future_data.columns)
-
-    numerical_cols = []
-    categorical_cols = []
-
-    for col in missing_cols:
-        clean_col = col.split("__")[-1]  # Extract original column name
-        if clean_col in data.columns:  # Ensure column exists before accessing
-            if np.issubdtype(data[clean_col].dtype, np.number):
-                numerical_cols.append(clean_col)
-            else:
-                categorical_cols.append(clean_col)
-
-    # Fill missing numerical values with mean (if column exists)
-    for col in numerical_cols:
-        if col in data.columns:
-            future_data[col] = data[col].mean()
-
-    # Fill missing categorical values with most frequent (if column exists)
+    # 🔥 Step 2: Handle missing categorical features (One-Hot Encoding Fix)
+    categorical_cols = model.named_steps['preprocessor'].transformers_[1][2]  # Extract categorical columns
     for col in categorical_cols:
-        if col in data.columns and not data[col].isna().all():
-            future_data[col] = data[col].mode()[0]
-        else:
-            future_data[col] = ""
+        if col in future_data.columns:
+            unique_values = data[col].unique()
+            for value in unique_values:
+                new_col_name = f"{col}__{value}"  # Matching one-hot encoding names
+                future_data[new_col_name] = (future_data[col] == value).astype(int)
+        future_data.drop(columns=[col], inplace=True, errors='ignore')  # Drop original categorical column
 
-    # Drop completely unknown columns to avoid errors
-    unknown_cols = missing_cols - set(numerical_cols) - set(categorical_cols)
-    future_data.drop(columns=unknown_cols, inplace=True, errors='ignore')
+    # 🔥 Step 3: Ensure all trained features exist in `future_data`
+    missing_cols = set(trained_feature_cols) - set(future_data.columns)
+    for col in missing_cols:
+        future_data[col] = 0  # Fill missing features with default values
+
+    # 🔥 Step 4: Reorder `future_data` to match training features
+    future_data = future_data[trained_feature_cols]
 
     # 🔍 Debugging: Print missing columns if any
     if missing_cols:
-        print(f"Warning: The following columns were missing and were handled: {missing_cols}")
-
-    # 🔥 Ensure future_data has all required columns
-    future_data = future_data.reindex(columns=trained_feature_cols, fill_value=0)
+        print(f"Warning: The following columns were missing and were added with default values: {missing_cols}")
 
     # Predict values
     preds = model.predict(future_data)
