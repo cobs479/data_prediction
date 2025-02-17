@@ -117,7 +117,11 @@ def generate_future_data(X, start_date, end_date):
         'LocationInNum': np.tile(location_nums, len(future_dates))
     })
 
-    # Generate hourly values (assuming 24-hour format, 00:00 to 23:00)
+    # DEBUGGING: Check if Year, Month, Day exist
+    st.write("📌 Future Data Preview (Before DateTime):")
+    st.dataframe(future_data.head())
+
+    # Generate hourly values
     future_data['Hour'] = np.tile(range(0, 2400, 100), len(future_data) // 24 + 1)[:len(future_data)]
 
     # Ensure missing categorical and numerical columns are filled
@@ -128,6 +132,10 @@ def generate_future_data(X, start_date, end_date):
             else:
                 future_data[col] = X[col].mean()  # Fill numerical with mean
 
+    # DEBUGGING: Check if Year, Month, Day are still correct
+    st.write("📌 Future Data (After Filling Columns):")
+    st.dataframe(future_data.head())
+
     # Convert DateTime column correctly
     try:
         future_data['DateTime'] = pd.to_datetime(
@@ -136,7 +144,9 @@ def generate_future_data(X, start_date, end_date):
     except Exception as e:
         st.error(f"⚠️ Error creating DateTime column: {e}")
 
-    st.dataframe(future_data)
+    # DEBUGGING: Confirm DateTime exists
+    st.write("📌 Future Data with DateTime:")
+    st.dataframe(future_data.head())
 
     return future_data
 
