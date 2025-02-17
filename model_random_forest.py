@@ -195,8 +195,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data.drop(columns=unknown_cols, inplace=True, errors='ignore')
 
     # 🔍 Debugging: Print missing columns if any
-    if missing_cols:
-        print(f"Warning: The following columns were missing and were handled: {missing_cols}")
+    st.warning(f"Warning: The following columns were missing and were handled: {missing_cols}")
 
     # Predict values
     preds = model.predict(future_data)
