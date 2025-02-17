@@ -137,10 +137,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Load past weather data (2017-2023)
     data = load_weather_data()
     
-    if data is None:
-        st.error("No historical weather data found!")
-        return
-
     # Create a dataframe for future predictions
     future_dates = pd.date_range(start=start_date, end=end_date, freq='H')
     future_data = pd.DataFrame({'datetime': future_dates})
@@ -148,21 +144,30 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Add location selection
     future_data['Location'] = location_select
 
-    # Extract feature columns from the model's preprocessor
+    # Extract feature columns from the trained model
     feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
 
-    # 🔥 Use historical data to fill missing values instead of NaN
+    # 🔥 Fill missing values using historical data when available
     for col in feature_cols:
         if col not in future_data.columns:
             if col in data.columns:
-                # Fill with historical mean (better than NaN)
-                future_data[col] = data[col].mean()
+                # ✅ If requested dates exist in historical data, use real values
+                mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
+                if mask.any():
+                    future_data[col] = data.loc[mask, col].values[:len(future_data)]
+                else:
+                    # ✅ If outside historical range, use the column's mean (if numerical)
+                    if np.issubdtype(data[col].dtype, np.number):
+                        future_data[col] = data[col].mean()
+                    else:
+                        # ✅ If categorical, remove the column to prevent errors
+                        future_data.drop(columns=[col], inplace=True, errors='ignore')
             else:
-                # If the column does not exist, fill with a default value (e.g., 0)
-                future_data[col] = 0
+                # ✅ If column doesn't exist in data, drop it
+                future_data.drop(columns=[col], inplace=True, errors='ignore')
 
-    # 🔍 Debugging: Check if the features are correctly populated
-    print("Future Data Sample Before Prediction:")
+    # 🔍 Debugging: Show generated future data before prediction
+    print("Generated Future Data Sample:")
     print(future_data.head())
 
     # Predict values
@@ -171,13 +176,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Store predictions
     future_data['Predicted'] = preds
 
-    # Display predictions
-    st.title("Future Data")
+    # Display results
     st.dataframe(future_data)
-
-    # Optional: Display graph and table
-    # display_table(field, future_data, preds, start_date, end_date, location_select)
-    # display_graph(field, future_data, preds, start_date, end_date, location_select)
 
     st.success("Prediction complete")
 
