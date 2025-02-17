@@ -181,6 +181,10 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
         st.write("Columns in X_predict:", X_predict.columns)
         return
 
+    # DEBUGGING: Print DateTime values
+    st.write("📌 Checking DateTime Column:")
+    st.dataframe(X_predict[['DateTime']].head())
+
     # Convert DateTime to datetime64 if necessary
     X_predict['DateTime'] = pd.to_datetime(X_predict['DateTime'], errors='coerce')
 
@@ -189,7 +193,7 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
     # Print debug info
-    st.write("Unique Locations in X_predict:", X_predict['Location'].unique())
+    st.write("📌 Unique Locations in X_predict:", X_predict['Location'].unique())
 
     # Apply filtering
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
