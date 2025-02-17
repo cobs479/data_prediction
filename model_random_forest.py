@@ -136,11 +136,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Load past weather data (2017-2023)
     data = load_weather_data()
-
-    if data is None:
-        st.error("No historical weather data found!")
-        return
-
+    
     # Create a dataframe for future predictions
     future_dates = pd.date_range(start=start_date, end=end_date, freq='H')
     future_data = pd.DataFrame({'datetime': future_dates})
@@ -150,56 +146,56 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Extract feature columns from the trained model
     trained_feature_cols = model.named_steps['preprocessor'].get_feature_names_out()
-
-    # Ensure `start_date` and `end_date` are in datetime format
+    
     start_date = pd.to_datetime(str(start_date) + ' 00:00')
     end_date = pd.to_datetime(str(end_date) + ' 23:00')
 
     # 🔥 Step 1: Fill missing values using historical data when available
     for col in trained_feature_cols:
-        clean_col = col.split("__")[-1]  # Handles feature transformation names
+        clean_col = col.split("__")[-1]  # Handles column transformations in OneHotEncoder
 
-        if clean_col in data.columns:
-            mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
+        if clean_col not in future_data.columns:
+            if clean_col in data.columns:
+                # ✅ If requested dates exist in historical data, use real values
+                mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
 
-            if mask.any():
-                historical_values = data.loc[mask, clean_col].values
+                if mask.any():
+                    historical_values = data.loc[mask, clean_col].values
 
-                # ✅ Ensure the length matches `future_data`
-                if len(historical_values) >= len(future_data):
-                    future_data[clean_col] = historical_values[:len(future_data)]
+                    # ✅ Ensure the length matches `future_data`
+                    if len(historical_values) >= len(future_data):
+                        future_data[clean_col] = historical_values[:len(future_data)]
+                    else:
+                        # ✅ If not enough values, repeat to fill
+                        future_data[clean_col] = np.resize(historical_values, len(future_data))
+
                 else:
-                    # ✅ If not enough values, repeat to fill
-                    future_data[clean_col] = np.resize(historical_values, len(future_data))
-
+                    # ✅ If outside historical range, use the column's mean (if numerical)
+                    if np.issubdtype(data[clean_col].dtype, np.number):
+                        future_data[clean_col] = data[clean_col].mean()
+                    else:
+                        # ✅ If categorical, drop to prevent errors
+                        future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
             else:
-                # ✅ If outside historical range, use the column's mean (if numerical)
-                if np.issubdtype(data[clean_col].dtype, np.number):
-                    future_data[clean_col] = data[clean_col].mean()
-                else:
-                    # ✅ If categorical, drop to prevent errors
-                    future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
+                # ✅ If column doesn't exist in data, drop it
+                future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
 
-    # 🔥 Step 2: Handle missing categorical features (One-Hot Encoding Fix)
-    categorical_cols = model.named_steps['preprocessor'].transformers_[1][2]  # Extract categorical columns
-    for col in categorical_cols:
-        if col in future_data.columns:
-            unique_values = data[col].unique()
-            for value in unique_values:
-                new_col_name = f"{col}__{value}"  # Matching one-hot encoding names
-                future_data[new_col_name] = (future_data[col] == value).astype(int)
-        future_data.drop(columns=[col], inplace=True, errors='ignore')  # Drop original categorical column
+    # 🔥 Step 2: Ensure all expected features exist
+    # Separate numerical and categorical columns
+    numerical_cols = [col for col in trained_feature_cols if np.issubdtype(data[col.split("__")[-1]].dtype, np.number)]
+    categorical_cols = [col for col in trained_feature_cols if col.split("__")[-1] not in numerical_cols]
 
-    # 🔥 Step 3: Ensure all trained features exist in `future_data`
-    missing_cols = set(trained_feature_cols) - set(future_data.columns)
-    for col in missing_cols:
-        future_data[col] = 0  # Fill missing features with default values
+    # Fill missing numerical values with mean
+    num_imputer = SimpleImputer(strategy="mean")
+    future_data[numerical_cols] = num_imputer.fit_transform(future_data[numerical_cols])
 
-    # 🔥 Step 4: Reorder `future_data` to match training features
-    future_data = future_data[trained_feature_cols]
+    # Fill missing categorical values with most frequent
+    cat_imputer = SimpleImputer(strategy="most_frequent")
+    future_data[categorical_cols] = cat_imputer.fit_transform(future_data[categorical_cols])
 
     # 🔍 Debugging: Print missing columns if any
-    st.warning(f"Warning: The following columns were missing and were added with default values: {missing_cols}")
+    missing_cols = set(trained_feature_cols) - set(future_data.columns)
+    st.warning(f"Warning: The following columns are missing from `future_data`: {missing_cols}")
 
     # Predict values
     #preds = model.predict(future_data)
