@@ -160,8 +160,11 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Store predictions
     future_data['Predicted'] = preds
 
+    st.dataframe(future_data)
+    st.dataframe(preds)
+
     # Display results
-    display_table(field, future_data, preds, start_date, end_date, location_select)
+    #display_table(field, future_data, preds, start_date, end_date, location_select)
     #display_graph(field, future_data, preds, start_date, end_date, location_select)
 
     st.success("Prediction complete")
