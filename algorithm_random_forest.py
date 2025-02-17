@@ -164,17 +164,33 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 # 🔹 Function to Display Graph
 def display_graph(X_predict, preds, start_date, end_date, location_select):
     """Plot prediction results"""
-    import matplotlib.pyplot as plt
 
-    X_predict['Location'] = X_predict['LocationInNum'].map({1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"})
+    # Ensure the DateTime column exists
+    if 'DateTime' not in X_predict.columns:
+        st.error("⚠️ Missing 'DateTime' column in X_predict!")
+        st.write("Columns in X_predict:", X_predict.columns)
+        return
 
+    # Convert DateTime to datetime64 if necessary
+    X_predict['DateTime'] = pd.to_datetime(X_predict['DateTime'], errors='coerce')
+
+    # Ensure locations are mapped correctly
+    location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
+    X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
+
+    # Print debug info
+    st.write("Unique Locations in X_predict:", X_predict['Location'].unique())
+
+    # Apply filtering
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
 
     if filtered_data.empty:
-        st.error("⚠️ No data available for plotting")
+        st.error(f"⚠️ No predictions found for {location_select} from {start_date.date()} to {end_date.date()}")
         return
 
+    # Plot the results
+    import matplotlib.pyplot as plt
     plt.figure(figsize=(12, 6))
     plt.plot(filtered_data['DateTime'], preds[mask], marker='o', label=location_select)
     plt.title(f'Predictions for {location_select}')
