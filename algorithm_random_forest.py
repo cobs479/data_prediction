@@ -109,7 +109,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
         st.error("No valid data available for prediction.")
 
 
-def generate_future_data(X, start_date, end_date):
+def generate_future_data(X, start_date, end_date, location_select):
     """Generate synthetic data for future predictions with all locations."""
     
     future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
