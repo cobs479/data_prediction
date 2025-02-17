@@ -205,7 +205,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     #preds = model.predict(future_data)
 
     # Store predictions
-    future_data['Predicted'] = preds
+    #future_data['Predicted'] = preds
 
     # Display results
     st.dataframe(future_data)
