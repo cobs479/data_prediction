@@ -183,8 +183,8 @@ def display_table(future_data, preds, start_date, end_date, location_select):
     results_df['Date-Time'] = pd.to_datetime(results_df['Date-Time'])
 
     # Ensure start_date and end_date are also datetime objects
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
+    start_date = pd.to_datetime(str(start_date) + ' 00:00')
+    end_date = pd.to_datetime(str(end_date) + ' 23:00')
 
     # Apply filtering (Comparison will now work correctly)
     results_df = results_df[(results_df['Date-Time'] >= start_date) &
