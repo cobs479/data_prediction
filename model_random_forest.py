@@ -202,7 +202,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     st.warning(f"Warning: The following columns were missing and were added with default values: {missing_cols}")
 
     # Predict values
-    preds = model.predict(future_data)
+    #preds = model.predict(future_data)
 
     # Store predictions
     future_data['Predicted'] = preds
