@@ -67,7 +67,6 @@ if submitted:
 
         # Call the prediction function based on the selected algorithm
         selected_field = selected_field.replace(" ", "")
-        selected_location = selected_location.replace(" ", "")
         print("Field:", selected_field)
         print("Start Date:", selected_start_date)
         print("End Date:", selected_end_date)
