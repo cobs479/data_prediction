@@ -130,12 +130,6 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
     }
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    location_reverse_mapping = {
-        "Batu Muda": 1,
-        "Petaling Jaya": 2,
-        "Cheras": 3,
-    }
-
     # Create a DataFrame for display
     results_df = pd.DataFrame({
         'Date-Time': X_predict['DateTime'],
@@ -177,12 +171,6 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     }
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    location_reverse_mapping = {
-        "Batu Muda": 1,
-        "Petaling Jaya": 2,
-        "Cheras": 3,
-    }
-
     # Convert selected date range into formatted strings for display
     start_date_str = start_date.strftime('%d/%m/%Y')
     end_date_str = end_date.strftime('%d/%m/%Y')
@@ -195,8 +183,7 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
 
     # If no data is found, display an error message
     if filtered_data.empty:
-        st.error(f"No predictions found between {
-                 start_date_str} and {end_date_str}.")
+        st.error(f"No predictions found for selected location ({location_select}) from {start_date_str} to {end_date_str}")
         return
 
     # Extract unique locations
