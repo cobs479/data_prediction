@@ -115,6 +115,8 @@ def predict_xgboost(field, start_date, end_date, location_select):
     display_graph(X_predict_full, preds, start_date, end_date, location_select)
     display_table(X_predict_full, preds, start_date, end_date, location_select)
 
+    st.success(f"Prediction ended")
+
 
 def display_table(X_predict, preds, start_date, end_date, location_select):
     # Ensure Hour column is properly formatted as HH:MM
