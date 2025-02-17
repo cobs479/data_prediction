@@ -145,53 +145,63 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data['Location'] = location_select
 
     # Extract feature columns from the trained model
-    feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
-
+    trained_feature_cols = model.named_steps['preprocessor'].get_feature_names_out()
+    
     start_date = pd.to_datetime(str(start_date) + ' 00:00')
     end_date = pd.to_datetime(str(end_date) + ' 23:00')
 
     # 🔥 Fill missing values using historical data when available
-    for col in feature_cols:
-        if col not in future_data.columns:
-            if col in data.columns:
+    for col in trained_feature_cols:
+        clean_col = col.split("__")[-1]  # Handles column transformations in OneHotEncoder
+
+        if clean_col not in future_data.columns:
+            if clean_col in data.columns:
                 # ✅ If requested dates exist in historical data, use real values
                 mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
 
                 if mask.any():
-                    historical_values = data.loc[mask, col].values
+                    historical_values = data.loc[mask, clean_col].values
 
                     # ✅ Ensure the length matches `future_data`
                     if len(historical_values) >= len(future_data):
-                        future_data[col] = historical_values[:len(future_data)]
+                        future_data[clean_col] = historical_values[:len(future_data)]
                     else:
                         # ✅ If not enough values, repeat to fill
-                        future_data[col] = np.resize(historical_values, len(future_data))
+                        future_data[clean_col] = np.resize(historical_values, len(future_data))
 
                 else:
                     # ✅ If outside historical range, use the column's mean (if numerical)
-                    if np.issubdtype(data[col].dtype, np.number):
-                        future_data[col] = data[col].mean()
+                    if np.issubdtype(data[clean_col].dtype, np.number):
+                        future_data[clean_col] = data[clean_col].mean()
                     else:
-                        # ✅ If categorical, remove the column to prevent errors
-                        future_data.drop(columns=[col], inplace=True, errors='ignore')
+                        # ✅ If categorical, drop to prevent errors
+                        future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
             else:
                 # ✅ If column doesn't exist in data, drop it
-                future_data.drop(columns=[col], inplace=True, errors='ignore')
+                future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
 
+    # 🔥 Ensure all expected features exist
+    for col in trained_feature_cols:
+        clean_col = col.split("__")[-1]  # Extract original column name from transformers
+        if clean_col not in future_data.columns:
+            # ✅ If missing, add with default value (0 for numbers, empty string for categorical)
+            future_data[clean_col] = 0 if np.issubdtype(data[clean_col].dtype, np.number) else ""
+
+    # 🔍 Debugging: Print missing columns if any
     missing_cols = set(trained_feature_cols) - set(future_data.columns)
     if missing_cols:
         print(f"Warning: The following columns are missing from `future_data`: {missing_cols}")
 
     # Predict values
-    #preds = model.predict(future_data)
+    preds = model.predict(future_data)
 
     # Store predictions
-    #future_data['Predicted'] = preds
+    future_data['Predicted'] = preds
 
     # Display results
-    #st.dataframe(future_data)
+    st.dataframe(future_data)
 
-    #st.success("Prediction complete")
+    st.success("Prediction complete")
 
 
 def display_table(field, future_data, preds, start_date, end_date, location_select):
