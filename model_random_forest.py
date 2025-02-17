@@ -161,13 +161,13 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data['Predicted'] = preds
 
     # Display results
-    display_table(future_data, preds, start_date, end_date, location_select)
-    display_graph(future_data, preds, start_date, end_date, location_select)
+    display_table(field, future_data, preds, start_date, end_date, location_select)
+    display_graph(field, future_data, preds, start_date, end_date, location_select)
 
     st.success("Prediction complete")
 
 
-def display_table(future_data, preds, start_date, end_date, location_select):
+def display_table(field, future_data, preds, start_date, end_date, location_select):
     future_data['DateTime'] = pd.to_datetime(future_data['datetime'])
 
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
@@ -197,7 +197,7 @@ def display_table(future_data, preds, start_date, end_date, location_select):
         st.dataframe(results_df)
 
 
-def display_graph(future_data, preds, start_date, end_date, location_select):
+def display_graph(field, future_data, preds, start_date, end_date, location_select):
     future_data['DateTime'] = future_data['datetime']
 
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
