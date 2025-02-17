@@ -162,7 +162,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Display results
     display_table(field, future_data, preds, start_date, end_date, location_select)
-    display_graph(field, future_data, preds, start_date, end_date, location_select)
+    #display_graph(field, future_data, preds, start_date, end_date, location_select)
 
     st.success("Prediction complete")
 
@@ -187,9 +187,9 @@ def display_table(field, future_data, preds, start_date, end_date, location_sele
     end_date = pd.to_datetime(str(end_date) + ' 23:00')
 
     # Apply filtering (Comparison will now work correctly)
-    results_df = results_df[(results_df['Date-Time'] >= start_date) &
-                            (results_df['Date-Time'] <= end_date) & 
-                            (results_df['Location'] == location_select)] #location_mapping.get(location_select, "Unknown")
+    #results_df = results_df[(results_df['Date-Time'] >= start_date) &
+    #                        (results_df['Date-Time'] <= end_date) & 
+    #                        (results_df['Location'] == location_select)] #location_mapping.get(location_select, "Unknown")
 
     if results_df.empty:
         st.error(f"No predictions found for location ({location_select}) from {start_date} to {end_date}")
