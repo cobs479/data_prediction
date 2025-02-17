@@ -4,7 +4,6 @@ import os
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
-import ace_tools as tools
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -239,8 +238,6 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     st.write("End Date:", end_date)
     st.write("Unique Locations:", X_predict['Location'].unique())
     st.write("Predictions array shape:", preds.shape)
-
-    tools.display_dataframe_to_user(name="X_predict Data", dataframe=X_predict)
 
     # Filter based on selected date range and location
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
