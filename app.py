@@ -51,7 +51,7 @@ if submitted:
     elif not selected_algorithm:
         st.error("Please select an algorithm to proceed with prediction.")
     # Validation: Check if the user has selected a valid column (not the default)
-    elif selected_field_2 == "Please select location":
+    elif selected_location == "Please select location":
         st.error("Please select a location to proceed with prediction.")
     else:
         # **Set session state to prevent reset**
@@ -60,24 +60,24 @@ if submitted:
         st.session_state.selected_algorithm = selected_algorithm
         st.session_state.selected_start_date = selected_start_date
         st.session_state.selected_end_date = selected_end_date
-        st.session_state.selected_field_2 = selected_field_2
+        st.session_state.selected_location = selected_location
 
         st.success(f"Prediction started with Algorithm: {selected_algorithm}, Field: {
-            selected_field}, From Date: {selected_start_date} and End Date: {selected_end_date}, Location: {selected_field_2}")
+            selected_field}, From Date: {selected_start_date} and End Date: {selected_end_date}, Location: {selected_location}")
 
         # Call the prediction function based on the selected algorithm
         selected_field = selected_field.replace(" ", "")
-        selected_field_2 = selected_field_2.replace(" ", "")
+        selected_location = selected_location.replace(" ", "")
         print("Field:", selected_field)
         print("Start Date:", selected_start_date)
         print("End Date:", selected_end_date)
-        print("Location:", selected_field_2)
+        print("Location:", selected_location)
 
         if selected_algorithm == 'Random Forest':
             predict_random_forest(
-                selected_field, selected_start_date, selected_end_date, selected_field_2)
+                selected_field, selected_start_date, selected_end_date, selected_location)
         elif selected_algorithm == 'XGBoost':
-            predict_xgboost(selected_field, selected_start_date, selected_end_date, selected_field_2)
+            predict_xgboost(selected_field, selected_start_date, selected_end_date, selected_location)
 
 # Display results if prediction was started
 if st.session_state.prediction_started:
