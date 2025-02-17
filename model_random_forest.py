@@ -20,11 +20,40 @@ def load_weather_data(start_year=2017, end_year=2023):
     
     for year in range(start_year, end_year + 1):
         file_path = f'data/weather_{year}.csv'
+        
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
             
-            # Combine Year, Month, Day, Hour into datetime
-            df['datetime'] = pd.to_datetime(df[['Year', 'Month', 'Day', 'Hour']].astype(str).agg('-'.join, axis=1), format='%Y-%m-%d-%H')
+            # Check if required columns exist
+            required_cols = ['Year', 'Month', 'Day', 'Hour']
+            for col in required_cols:
+                if col not in df.columns:
+                    raise ValueError(f"Missing column '{col}' in {file_path}")
+
+            # Ensure Year, Month, Day, Hour are numeric (convert if necessary)
+            for col in required_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+            # Drop rows where any of the datetime components are missing
+            df.dropna(subset=required_cols, inplace=True)
+
+            # Convert Hour to two-digit format
+            df['Hour'] = df['Hour'].astype(int).astype(str).str.zfill(2)
+            df['Month'] = df['Month'].astype(int).astype(str).str.zfill(2)
+            df['Day'] = df['Day'].astype(int).astype(str).str.zfill(2)
+
+            # Create datetime column
+            df['datetime'] = pd.to_datetime(
+                df['Year'].astype(str) + '-' +
+                df['Month'].astype(str) + '-' +
+                df['Day'].astype(str) + ' ' +
+                df['Hour'].astype(str) + ':00',
+                format='%Y-%m-%d %H:%M',
+                errors='coerce'
+            )
+
+            # Drop any rows where datetime conversion failed
+            df.dropna(subset=['datetime'], inplace=True)
 
             # Drop unnecessary columns
             df.drop(columns=['Year', 'Month', 'Day', 'Hour'], inplace=True)
