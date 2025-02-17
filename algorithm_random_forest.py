@@ -85,6 +85,18 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     if X_predict is not None:
         preds = pipeline.predict(X_predict)
+
+        # Ensure the target field exists in X_predict before calculating error
+        if field in X_predict:
+            actual_values = X_predict[field]
+        else:
+            actual_values = np.full_like(preds, y.mean())  # Create an array of same shape as preds
+        
+        # Now, calculate error metrics
+        mae_score = mean_absolute_error(preds, actual_values)
+        mse_score = mean_squared_error(preds, actual_values)
+        rmse_score = np.sqrt(mse_score)
+        
         mae_score = mean_absolute_error(preds, X_predict[field] if field in X_predict else y.mean())
         mse_score = mean_squared_error(preds, X_predict[field] if field in X_predict else y.mean())
         rmse_score = np.sqrt(mse_score)
