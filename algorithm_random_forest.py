@@ -197,28 +197,27 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 
 def display_graph(X_predict, preds, start_date, end_date, location_select):
     """Plot prediction results."""
-    
-    # Ensure the Year, Month, and Day columns exist
-    if not all(col in X_predict.columns for col in ['Year', 'Month', 'Day']):
-        st.error("Missing date-related columns in prediction data. Cannot plot graph.")
+
+    # Ensure DateTime column is properly converted
+    if 'DateTime' not in X_predict.columns:
+        st.error("Missing 'DateTime' column in predictions.")
         return
 
-    # Ensure Year, Month, and Day are integers and handle missing values
-    X_predict = X_predict.dropna(subset=['Year', 'Month', 'Day']).copy()  # Drop NaN rows
-    X_predict[['Year', 'Month', 'Day']] = X_predict[['Year', 'Month', 'Day']].astype(int)  # Convert to int
-    
-    # Create DateTime column
-    try:
-        X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
-    except Exception as e:
-        st.error(f"Error creating DateTime column: {e}")
-        return
-    
-    # Mapping numerical locations to readable names
+    # Convert to datetime (if not already)
+    X_predict['DateTime'] = pd.to_datetime(X_predict['DateTime'], errors='coerce')
+
+    # Drop NaN values after conversion
+    X_predict = X_predict.dropna(subset=['DateTime'])
+
+    # Convert start_date and end_date to pandas datetime
+    start_date = pd.to_datetime(start_date)  # Ensures it's datetime64[ns]
+    end_date = pd.to_datetime(end_date)
+
+    # Ensure Location column is correct
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    # Filter based on selected date range and location
+    # Filter data within the selected date range
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
@@ -230,7 +229,7 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     # Plot
     plt.figure(figsize=(12, 6))
     plt.plot(filtered_data['DateTime'], filtered_preds, marker='o', label=location_select)
-    plt.title(f'Predictions from {start_date} to {end_date}')
+    plt.title(f'Predictions from {start_date.date()} to {end_date.date()}')
     plt.xlabel('Date')
     plt.ylabel('Predicted Value')
     plt.xticks(rotation=45)
