@@ -149,11 +149,12 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 
     # Filter data within the date range
     results_df = results_df[(results_df['Date-Time'] >= start_datetime) &
-                            (results_df['Date-Time'] <= end_datetime)]
+                            (results_df['Date-Time'] <= end_datetime) &
+                            (results_df['Location'] == location_select)]
 
     # Display filtered table
     if results_df.empty:
-        st.error(f"No predictions found for selected locations from {
+        st.error(f"No predictions found for selected location ({location_select}) from {
                  start_date} to {end_date}")
     else:
         st.write(f"### Predictions from {start_date} to {end_date}")
@@ -182,14 +183,13 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
 
     # Filter data within the selected date range
     mask = (X_predict['DateTime'] >= start_date) & (
-        X_predict['DateTime'] <= end_date)
+        X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
 
     # If no data is found, display an error message
     if filtered_data.empty:
-        st.error(f"No predictions found between {
-                 start_date_str} and {end_date_str}.")
+        st.error(f"No predictions found for selected location ({location_select}) from {start_date_str} to {end_date_str}")
         return
 
     # Extract unique locations
