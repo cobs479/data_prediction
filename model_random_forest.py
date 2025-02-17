@@ -127,32 +127,46 @@ def predict_random_forest(field, start_date, end_date, location_select):
     model_path = f'saved_model/RF_{field}.joblib'
     
     if not os.path.exists(model_path):
-        st.error(f"Model for '{field}' not found. Please train the model first.")
-        return
-    
-    model = joblib.load(model_path)
+        st.error(f"Model for '{field}' not found. Training new model...")
+        model = train_random_forest(field)
+        if model is None:
+            return
+    else:
+        model = joblib.load(model_path)
 
+    # Load past weather data (2017-2023)
+    data = load_weather_data()
+    
     # Create a dataframe for future predictions
     future_dates = pd.date_range(start=start_date, end=end_date, freq='H')
     future_data = pd.DataFrame({'datetime': future_dates})
 
-    # Add location selection as a feature
+    # Add location selection
     future_data['Location'] = location_select
 
-    # Extract expected features from the trained model
-    expected_features = model.named_steps['preprocessor'].get_feature_names_out()
+    # Extract feature columns from the trained model
+    feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
 
     start_date = pd.to_datetime(str(start_date) + ' 00:00')
     end_date = pd.to_datetime(str(end_date) + ' 23:00')
 
-    # Ensure `future_data` has all required columns
-    for col in expected_features:
+    # 🔥 Fill missing values using historical data when available
+    for col in feature_cols:
         if col not in future_data.columns:
             if col in data.columns:
                 # ✅ If requested dates exist in historical data, use real values
                 mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
+
                 if mask.any():
-                    future_data[col] = data.loc[mask, col].values[:len(future_data)]
+                    historical_values = data.loc[mask, col].values
+
+                    # ✅ Ensure the length matches `future_data`
+                    if len(historical_values) >= len(future_data):
+                        future_data[col] = historical_values[:len(future_data)]
+                    else:
+                        # ✅ If not enough values, repeat to fill
+                        future_data[col] = np.resize(historical_values, len(future_data))
+
                 else:
                     # ✅ If outside historical range, use the column's mean (if numerical)
                     if np.issubdtype(data[col].dtype, np.number):
@@ -164,14 +178,15 @@ def predict_random_forest(field, start_date, end_date, location_select):
                 # ✅ If column doesn't exist in data, drop it
                 future_data.drop(columns=[col], inplace=True, errors='ignore')
 
-    # Reorder `future_data` to match training feature order
-    future_data = future_data[expected_features]
+    # 🔍 Debugging: Show generated future data before prediction
+    print("Generated Future Data Sample:")
+    print(future_data.head())
 
     # Predict values
-    #preds = model.predict(future_data)
+    preds = model.predict(future_data)
 
     # Store predictions
-    #future_data['Predicted'] = preds
+    future_data['Predicted'] = preds
 
     # Display results
     st.dataframe(future_data)
