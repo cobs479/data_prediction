@@ -113,9 +113,8 @@ def generate_future_data(X, start_date, end_date, location_select):
     """Generate synthetic data for future predictions."""
     
     future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
-    categorical_cols = [cname for cname in X.columns if X[cname].dtype == "object"]
-    numerical_cols = [cname for cname in X.columns if X[cname].dtype in ['int64', 'float64']]
-
+    
+    # Ensure Year, Month, and Day are extracted correctly
     future_data = pd.DataFrame({
         'Year': future_dates.year,
         'Month': future_dates.month,
@@ -125,17 +124,18 @@ def generate_future_data(X, start_date, end_date, location_select):
     # Generate hourly values
     future_data['Hour'] = np.tile(range(0, 2400, 100), len(future_data) // 24 + 1)[:len(future_data)]
 
-    # Location Mapping
+    # Ensure location mapping exists
     location_mapping = {"Batu Muda": 1, "Petaling Jaya": 2, "Cheras": 3}
     future_data['LocationInNum'] = location_mapping.get(location_select, 1)
 
-    # Fill missing categorical data
-    for col in categorical_cols:
-        future_data[col] = X[col].mode()[0]  
+    # Convert to integers
+    future_data[['Year', 'Month', 'Day', 'Hour']] = future_data[['Year', 'Month', 'Day', 'Hour']].astype(int)
 
-    # Fill numerical columns with historical mean
-    for col in numerical_cols:
-        future_data[col] = X[col].mean()
+    # Ensure DateTime column is created
+    try:
+        future_data['DateTime'] = pd.to_datetime(future_data[['Year', 'Month', 'Day']])
+    except Exception as e:
+        st.error(f"Error creating DateTime column: {e}")
 
     return future_data
 
@@ -198,37 +198,42 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 def display_graph(X_predict, preds, start_date, end_date, location_select):
     """Plot prediction results."""
 
-    # Ensure DateTime column is properly converted
-    if 'Date-Time' not in X_predict.columns:
-        st.error("Missing 'Date-Time' column in predictions.")
+    # Ensure the required columns exist
+    if not all(col in X_predict.columns for col in ['Year', 'Month', 'Day']):
+        st.error("Missing date-related columns in prediction data. Cannot plot graph.")
         return
 
-    # Convert to datetime (if not already)
-    X_predict['Date-Time'] = pd.to_datetime(X_predict['Date-Time'], errors='coerce')
+    # Convert Year, Month, Day to integers and drop NaNs
+    X_predict = X_predict.dropna(subset=['Year', 'Month', 'Day']).copy()
+    X_predict[['Year', 'Month', 'Day']] = X_predict[['Year', 'Month', 'Day']].astype(int)
 
-    # Drop NaN values after conversion
-    X_predict = X_predict.dropna(subset=['Date-Time'])
+    # Ensure DateTime column is created
+    if 'DateTime' not in X_predict.columns:
+        X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']], errors='coerce')
+
+    # Drop NaNs after conversion
+    X_predict = X_predict.dropna(subset=['DateTime'])
 
     # Convert start_date and end_date to pandas datetime
-    start_date = pd.to_datetime(start_date)  # Ensures it's datetime64[ns]
+    start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
 
-    # Ensure Location column is correct
+    # Ensure location mapping is correct
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    # Filter data within the selected date range
-    mask = (X_predict['Date-Time'] >= start_date) & (X_predict['Date-Time'] <= end_date) & (X_predict['Location'] == location_select)
+    # Filter based on selected date range and location
+    mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
 
     if filtered_data.empty:
-        st.error(f"No predictions found for {location_select} from {start_date} to {end_date}")
+        st.error(f"No predictions found for {location_select} from {start_date.date()} to {end_date.date()}")
         return
 
     # Plot
     plt.figure(figsize=(12, 6))
-    plt.plot(filtered_data['Date-Time'], filtered_preds, marker='o', label=location_select)
+    plt.plot(filtered_data['DateTime'], filtered_preds, marker='o', label=location_select)
     plt.title(f'Predictions from {start_date.date()} to {end_date.date()}')
     plt.xlabel('Date')
     plt.ylabel('Predicted Value')
