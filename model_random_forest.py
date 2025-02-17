@@ -199,8 +199,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data = future_data[trained_feature_cols]
 
     # 🔍 Debugging: Print missing columns if any
-    if missing_cols:
-        print(f"Warning: The following columns were missing and were added with default values: {missing_cols}")
+    st.warning(f"Warning: The following columns were missing and were added with default values: {missing_cols}")
 
     # Predict values
     preds = model.predict(future_data)
