@@ -22,6 +22,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
         return
     
     X = pd.read_csv(train_file_path)
+
+    st.warning(f"Running")
     
     # Try loading the prediction file, if unavailable, generate new data based on historical data
     if os.path.exists(predict_file_path):
