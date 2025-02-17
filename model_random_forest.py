@@ -171,7 +171,7 @@ def display_table(future_data, preds, start_date, end_date, location_select):
     future_data['DateTime'] = pd.to_datetime(future_data['datetime'])
 
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
-    future_data['Location'] = location_mapping.get(location_select, "Unknown")
+    future_data['Location'] = future_data['LocationInNum'].map(location_mapping) #location_mapping.get(location_select, "Unknown")
 
     results_df = pd.DataFrame({
         'Date-Time': future_data['DateTime'],  # Ensure this column is in datetime format
@@ -189,7 +189,7 @@ def display_table(future_data, preds, start_date, end_date, location_select):
     # Apply filtering (Comparison will now work correctly)
     results_df = results_df[(results_df['Date-Time'] >= start_date) &
                             (results_df['Date-Time'] <= end_date) & 
-                            (results_df['Location'] == location_mapping.get(location_select, "Unknown"))]
+                            (results_df['Location'] == location_select)] #location_mapping.get(location_select, "Unknown")
 
     if results_df.empty:
         st.error(f"No predictions found for location ({location_select}) from {start_date} to {end_date}")
@@ -201,7 +201,7 @@ def display_graph(future_data, preds, start_date, end_date, location_select):
     future_data['DateTime'] = future_data['datetime']
 
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
-    future_data['Location'] = location_mapping.get(location_select, "Unknown")
+    future_data['Location'] = future_data['LocationInNum'].map(location_mapping)
 
     start_date_str = start_date.strftime('%d/%m/%Y')
     end_date_str = end_date.strftime('%d/%m/%Y')
