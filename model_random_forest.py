@@ -136,7 +136,11 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Load past weather data (2017-2023)
     data = load_weather_data()
-    
+
+    if data is None:
+        st.error("No historical weather data found!")
+        return
+
     # Create a dataframe for future predictions
     future_dates = pd.date_range(start=start_date, end=end_date, freq='H')
     future_data = pd.DataFrame({'datetime': future_dates})
@@ -153,49 +157,65 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # 🔥 Step 1: Fill missing values using historical data when available
     for col in trained_feature_cols:
-        # Check if the column exists in historical data
-        if col in data.columns:
+        clean_col = col.split("__")[-1]  # Handles feature transformation names
+        
+        if clean_col in data.columns:
             mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
 
             if mask.any():
-                historical_values = data.loc[mask, col].values
+                historical_values = data.loc[mask, clean_col].values
 
                 # ✅ Ensure the length matches `future_data`
                 if len(historical_values) >= len(future_data):
-                    future_data[col] = historical_values[:len(future_data)]
+                    future_data[clean_col] = historical_values[:len(future_data)]
                 else:
                     # ✅ If not enough values, repeat to fill
-                    future_data[col] = np.resize(historical_values, len(future_data))
+                    future_data[clean_col] = np.resize(historical_values, len(future_data))
 
             else:
                 # ✅ If outside historical range, use the column's mean (if numerical)
-                if np.issubdtype(data[col].dtype, np.number):
-                    future_data[col] = data[col].mean()
+                if np.issubdtype(data[clean_col].dtype, np.number):
+                    future_data[clean_col] = data[clean_col].mean()
                 else:
                     # ✅ If categorical, drop to prevent errors
-                    future_data.drop(columns=[col], inplace=True, errors='ignore')
+                    future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
 
-    # 🔥 Step 2: Ensure all expected features exist
+    # 🔥 Step 2: Handle missing columns
     missing_cols = set(trained_feature_cols) - set(future_data.columns)
 
-    # Handle numerical and categorical separately
-    numerical_cols = [col for col in missing_cols if col in data.columns and np.issubdtype(data[col].dtype, np.number)]
-    categorical_cols = [col for col in missing_cols if col in data.columns and not np.issubdtype(data[col].dtype, np.number)]
+    numerical_cols = []
+    categorical_cols = []
 
-    # Fill missing numerical values with mean
+    for col in missing_cols:
+        clean_col = col.split("__")[-1]  # Extract original column name
+        if clean_col in data.columns:  # Ensure column exists before accessing
+            if np.issubdtype(data[clean_col].dtype, np.number):
+                numerical_cols.append(clean_col)
+            else:
+                categorical_cols.append(clean_col)
+
+    # Fill missing numerical values with mean (if column exists)
     for col in numerical_cols:
-        future_data[col] = data[col].mean()
+        if col in data.columns:
+            future_data[col] = data[col].mean()
 
-    # Fill missing categorical values with most frequent
+    # Fill missing categorical values with most frequent (if column exists)
     for col in categorical_cols:
-        future_data[col] = data[col].mode()[0] if not data[col].isna().all() else ""
+        if col in data.columns and not data[col].isna().all():
+            future_data[col] = data[col].mode()[0]
+        else:
+            future_data[col] = ""
 
     # Drop completely unknown columns to avoid errors
     unknown_cols = missing_cols - set(numerical_cols) - set(categorical_cols)
     future_data.drop(columns=unknown_cols, inplace=True, errors='ignore')
 
     # 🔍 Debugging: Print missing columns if any
-    st.warning(f"Warning: The following columns were missing and were handled: {missing_cols}")
+    if missing_cols:
+        print(f"Warning: The following columns were missing and were handled: {missing_cols}")
+
+    # 🔥 Ensure future_data has all required columns
+    future_data = future_data.reindex(columns=trained_feature_cols, fill_value=0)
 
     # Predict values
     preds = model.predict(future_data)
