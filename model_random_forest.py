@@ -43,6 +43,12 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Filter based on location
     if 'Location' in X.columns:
         X = X[X['Location'] == location_select]
+        y = y.loc[X.index]  # Ensure y is filtered the same way as X
+    
+    # Check if data is available after filtering
+    if X.empty:
+        st.error(f"No data available for the selected location: {location_select}")
+        return
     
     # Train/test split
     X_train, X_valid, y_train, y_valid = train_test_split(
