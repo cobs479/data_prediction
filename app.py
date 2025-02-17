@@ -29,7 +29,7 @@ with st.form("prediction_form"):
         "Select 'To' Date", pd.to_datetime("today"), key="end_date")
 
     # Location selector
-    locations = ["Please select location", "PJ", "KL"]
+    locations = ["Please select location", "Batu Muda", "Petaling Jaya", "Cheras"]
     selected_location = st.selectbox(
         "Select location:", locations, key="dropdown_field_2")
 
