@@ -4,6 +4,7 @@ import os
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+import ace_tools as tools
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -109,49 +110,44 @@ def predict_random_forest(field, start_date, end_date, location_select):
         st.error("No valid data available for prediction.")
 
 
-def generate_future_data(X, start_date, end_date, location_select):
-    """Generate synthetic data for future predictions with all required columns."""
+def generate_future_data(X, start_date, end_date):
+    """Generate synthetic data for future predictions with all locations."""
     
     future_dates = pd.date_range(start=start_date, end=end_date, freq='D')
-    
-    # Ensure Year, Month, and Day exist
+
+    # Generate all locations in one dataset
+    location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
+    location_nums = list(location_mapping.keys())  # [1, 2, 3]
+
+    # Create future data by repeating locations for each date
     future_data = pd.DataFrame({
-        'Year': future_dates.year,
-        'Month': future_dates.month,
-        'Day': future_dates.day
+        'Year': np.repeat(future_dates.year, len(location_nums)),
+        'Month': np.repeat(future_dates.month, len(location_nums)),
+        'Day': np.repeat(future_dates.day, len(location_nums)),
+        'LocationInNum': np.tile(location_nums, len(future_dates))
     })
 
-    # Generate hourly values (assuming 00:00, 01:00, ..., 23:00 format)
+    # Generate hourly values
     future_data['Hour'] = np.tile(range(0, 2400, 100), len(future_data) // 24 + 1)[:len(future_data)]
 
-    # Ensure location mapping exists
-    location_mapping = {"Batu Muda": 1, "Petaling Jaya": 2, "Cheras": 3}
-    future_data['LocationInNum'] = location_mapping.get(location_select, 1)
+    # Fill missing categorical and numerical columns
+    categorical_cols = [col for col in X.columns if X[col].dtype == "object"]
+    numerical_cols = [col for col in X.columns if X[col].dtype in ['int64', 'float64']]
 
-    # Retrieve training column names
-    training_cols = list(X.columns)  # Get original feature names
-
-    # Fill missing categorical data with mode
-    categorical_cols = [col for col in training_cols if X[col].dtype == "object"]
     for col in categorical_cols:
         future_data[col] = X[col].mode()[0] if col in X else "Unknown"
-
-    # Fill missing numerical columns with mean
-    numerical_cols = [col for col in training_cols if X[col].dtype in ['int64', 'float64']]
+    
     for col in numerical_cols:
-        future_data[col] = X[col].mean() if col in X else 0  # Default to 0 if missing
+        future_data[col] = X[col].mean() if col in X else 0  
 
     # Ensure correct column order
-    future_data = future_data[training_cols]  # Align columns with training set
+    future_data = future_data[list(X.columns)]  # Align with training columns
 
-    # Convert Year, Month, Day to integers
+    # Convert to integers
     future_data[['Year', 'Month', 'Day', 'Hour']] = future_data[['Year', 'Month', 'Day', 'Hour']].astype(int)
 
-    # Ensure DateTime column exists
-    try:
-        future_data['DateTime'] = pd.to_datetime(future_data[['Year', 'Month', 'Day']])
-    except Exception as e:
-        st.error(f"Error creating DateTime column: {e}")
+    # Create DateTime column
+    future_data['DateTime'] = pd.to_datetime(future_data[['Year', 'Month', 'Day']])
 
     return future_data
 
@@ -243,6 +239,8 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     st.write("End Date:", end_date)
     st.write("Unique Locations:", X_predict['Location'].unique())
     st.write("Predictions array shape:", preds.shape)
+
+    tools.display_dataframe_to_user(name="X_predict Data", dataframe=X_predict)
 
     # Filter based on selected date range and location
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
