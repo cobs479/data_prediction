@@ -168,19 +168,27 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
 
 def display_table(future_data, preds, start_date, end_date, location_select):
-    future_data['DateTime'] = future_data['datetime']
+    future_data['DateTime'] = pd.to_datetime(future_data['datetime'])
 
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     future_data['Location'] = location_mapping.get(location_select, "Unknown")
 
     results_df = pd.DataFrame({
-        'Date-Time': future_data['DateTime'],
+        'Date-Time': future_data['DateTime'],  # Ensure this column is in datetime format
         'Location': future_data['Location'],
         'Predicted Value': preds
     })
 
+    # 🔥 Convert Date-Time column to datetime (Fix)
+    results_df['Date-Time'] = pd.to_datetime(results_df['Date-Time'])
+
+    # Ensure start_date and end_date are also datetime objects
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    # Apply filtering (Comparison will now work correctly)
     results_df = results_df[(results_df['Date-Time'] >= start_date) &
-                            (results_df['Date-Time'] <= end_date) &
+                            (results_df['Date-Time'] <= end_date) & 
                             (results_df['Location'] == location_mapping.get(location_select, "Unknown"))]
 
     if results_df.empty:
