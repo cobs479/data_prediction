@@ -50,6 +50,9 @@ if submitted:
     # Validation: Check if an algorithm is selected
     elif not selected_algorithm:
         st.error("Please select an algorithm to proceed with prediction.")
+    # Validation: Check if the user has selected a valid column (not the default)
+    if selected_field_2 == "Please select location":
+        st.error("Please select a location to proceed with prediction.")
     else:
         # **Set session state to prevent reset**
         st.session_state.prediction_started = True
@@ -57,22 +60,24 @@ if submitted:
         st.session_state.selected_algorithm = selected_algorithm
         st.session_state.selected_start_date = selected_start_date
         st.session_state.selected_end_date = selected_end_date
+        st.session_state.selected_field_2 = selected_field_2
 
         st.success(f"Prediction started with Algorithm: {selected_algorithm}, Field: {
-            selected_field}, From Date: {selected_start_date} and End Date: {selected_end_date}")
+            selected_field}, From Date: {selected_start_date} and End Date: {selected_end_date}, Location: {selected_field_2}")
 
         # Call the prediction function based on the selected algorithm
         selected_field = selected_field.replace(" ", "")
+        selected_field_2 = selected_field_2.replace(" ", "")
         print("Field:", selected_field)
         print("Start Date:", selected_start_date)
         print("End Date:", selected_end_date)
+        print("Location:", selected_field_2)
 
         if selected_algorithm == 'Random Forest':
             predict_random_forest(
-                selected_field, selected_start_date, selected_end_date)
+                selected_field, selected_start_date, selected_end_date, selected_field_2)
         elif selected_algorithm == 'XGBoost':
-            predict_xgboost(selected_field, selected_start_date,
-                            selected_end_date)
+            predict_xgboost(selected_field, selected_start_date, selected_end_date, selected_field_2)
 
 # Display results if prediction was started
 if st.session_state.prediction_started:
