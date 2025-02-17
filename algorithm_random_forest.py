@@ -130,6 +130,12 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
     }
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
+    location_reverse_mapping = {
+        "Batu Muda": 1,
+        "Petaling Jaya": 2,
+        "Cheras": 3,
+    }
+
     # Create a DataFrame for display
     results_df = pd.DataFrame({
         'Date-Time': X_predict['DateTime'],
@@ -144,6 +150,9 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
     # Filter data within the date range
     results_df = results_df[(results_df['Date-Time'] >= start_datetime) &
                             (results_df['Date-Time'] <= end_datetime)]
+
+    # Filter data of selected location
+    results_df = results_df[results_df['Location'] == location_select]
 
     # Display filtered table
     if results_df.empty:
@@ -170,13 +179,19 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     }
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
+    location_reverse_mapping = {
+        "Batu Muda": 1,
+        "Petaling Jaya": 2,
+        "Cheras": 3,
+    }
+
     # Convert selected date range into formatted strings for display
     start_date_str = start_date.strftime('%d/%m/%Y')
     end_date_str = end_date.strftime('%d/%m/%Y')
 
     # Filter data within the selected date range
     mask = (X_predict['DateTime'] >= start_date) & (
-        X_predict['DateTime'] <= end_date)
+        X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
     filtered_data = X_predict[mask]
     filtered_preds = preds[mask]
 
