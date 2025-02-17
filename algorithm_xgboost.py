@@ -14,7 +14,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
 
-def predict_xgboost(field, start_date, end_date):
+def predict_xgboost(field, start_date, end_date, location_select):
     train_file_path = 'data/weather_2021.csv'
     predict_file_path = f'data/weather_{end_date.year}.csv'
 
@@ -112,11 +112,11 @@ def predict_xgboost(field, start_date, end_date):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    display_graph(X_predict_full, preds, start_date, end_date)
-    display_table(X_predict_full, preds, start_date, end_date)
+    display_graph(X_predict_full, preds, start_date, end_date, location_select)
+    display_table(X_predict_full, preds, start_date, end_date, location_select)
 
 
-def display_table(X_predict, preds, start_date, end_date):
+def display_table(X_predict, preds, start_date, end_date, location_select):
     # Ensure Hour column is properly formatted as HH:MM
     X_predict['Hour'] = X_predict['Hour'].astype(str).str.zfill(4)
     X_predict['Formatted Hour'] = X_predict['Hour'].str[:2] + \
@@ -160,7 +160,7 @@ def display_table(X_predict, preds, start_date, end_date):
         st.dataframe(results_df, hide_index=True)
 
 
-def display_graph(X_predict, preds, start_date, end_date):
+def display_graph(X_predict, preds, start_date, end_date, location_select):
     # Convert date inputs to datetime
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
