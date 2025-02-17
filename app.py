@@ -51,7 +51,7 @@ if submitted:
     elif not selected_algorithm:
         st.error("Please select an algorithm to proceed with prediction.")
     # Validation: Check if the user has selected a valid column (not the default)
-    if selected_field_2 == "Please select location":
+    elif selected_field_2 == "Please select location":
         st.error("Please select a location to proceed with prediction.")
     else:
         # **Set session state to prevent reset**
