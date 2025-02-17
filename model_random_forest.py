@@ -147,6 +147,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Extract feature columns from the trained model
     feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
 
+    start_date = pd.to_datetime(str(start_date) + ' 00:00')
+    end_date = pd.to_datetime(str(end_date) + ' 23:00')
+
     # 🔥 Fill missing values using historical data when available
     for col in feature_cols:
         if col not in future_data.columns:
