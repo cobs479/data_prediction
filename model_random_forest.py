@@ -191,7 +191,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     #future_data['Predicted'] = preds
 
     # Display results
-    #st.dataframe(future_data)
+    st.dataframe(future_data)
 
     #st.success("Prediction complete")
 
