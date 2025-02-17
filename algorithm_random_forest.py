@@ -149,7 +149,7 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
 
     # Filter data within the date range
     results_df = results_df[(results_df['Date-Time'] >= start_datetime) &
-                            (results_df['Date-Time'] <= end_datetime) & results_df['Location'] = location_select]
+                            (results_df['Date-Time'] <= end_datetime) & results_df['Location'] == location_select]
 
     # Display filtered table
     if results_df.empty:
