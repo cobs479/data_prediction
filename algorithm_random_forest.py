@@ -233,11 +233,8 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
     location_mapping = {1: "Batu Muda", 2: "Petaling Jaya", 3: "Cheras"}
     X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
 
-    st.write("Total rows in X_predict before filtering:", X_predict.shape)
-    st.write("Start Date:", start_date)
-    st.write("End Date:", end_date)
-    st.write("Unique Locations:", X_predict['Location'].unique())
-    st.write("Predictions array shape:", preds.shape)
+    # Display X_predict as a table
+    st.dataframe(X_predict)
 
     # Filter based on selected date range and location
     mask = (X_predict['DateTime'] >= start_date) & (X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
