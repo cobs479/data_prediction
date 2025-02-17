@@ -127,75 +127,28 @@ def predict_random_forest(field, start_date, end_date, location_select):
     model_path = f'saved_model/RF_{field}.joblib'
     
     if not os.path.exists(model_path):
-        st.error(f"Model for '{field}' not found. Training new model...")
-        model = train_random_forest(field)
-        if model is None:
-            return
-    else:
-        model = joblib.load(model_path)
-
-    # Load past weather data (2017-2023)
-    data = load_weather_data()
+        st.error(f"Model for '{field}' not found. Please train the model first.")
+        return
     
+    model = joblib.load(model_path)
+
     # Create a dataframe for future predictions
     future_dates = pd.date_range(start=start_date, end=end_date, freq='H')
     future_data = pd.DataFrame({'datetime': future_dates})
 
-    # Add location selection
+    # Add location selection as a feature
     future_data['Location'] = location_select
 
-    # Extract feature columns from the trained model
-    trained_feature_cols = model.named_steps['preprocessor'].get_feature_names_out()
-    
-    start_date = pd.to_datetime(str(start_date) + ' 00:00')
-    end_date = pd.to_datetime(str(end_date) + ' 23:00')
+    # Extract expected features from the trained model
+    expected_features = model.named_steps['preprocessor'].get_feature_names_out()
 
-    # 🔥 Step 1: Fill missing values using historical data when available
-    for col in trained_feature_cols:
-        clean_col = col.split("__")[-1]  # Handles column transformations in OneHotEncoder
+    # Ensure `future_data` has all required columns
+    for col in expected_features:
+        if col not in future_data.columns:
+            future_data[col] = 0  # Assign default value if missing
 
-        if clean_col not in future_data.columns:
-            if clean_col in data.columns:
-                # ✅ If requested dates exist in historical data, use real values
-                mask = (data['datetime'] >= start_date) & (data['datetime'] <= end_date)
-
-                if mask.any():
-                    historical_values = data.loc[mask, clean_col].values
-
-                    # ✅ Ensure the length matches `future_data`
-                    if len(historical_values) >= len(future_data):
-                        future_data[clean_col] = historical_values[:len(future_data)]
-                    else:
-                        # ✅ If not enough values, repeat to fill
-                        future_data[clean_col] = np.resize(historical_values, len(future_data))
-
-                else:
-                    # ✅ If outside historical range, use the column's mean (if numerical)
-                    if np.issubdtype(data[clean_col].dtype, np.number):
-                        future_data[clean_col] = data[clean_col].mean()
-                    else:
-                        # ✅ If categorical, drop to prevent errors
-                        future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
-            else:
-                # ✅ If column doesn't exist in data, drop it
-                future_data.drop(columns=[clean_col], inplace=True, errors='ignore')
-
-    # 🔥 Step 2: Ensure all expected features exist
-    # Separate numerical and categorical columns
-    numerical_cols = [col for col in trained_feature_cols if np.issubdtype(data[col.split("__")[-1]].dtype, np.number)]
-    categorical_cols = [col for col in trained_feature_cols if col.split("__")[-1] not in numerical_cols]
-
-    # Fill missing numerical values with mean
-    num_imputer = SimpleImputer(strategy="mean")
-    future_data[numerical_cols] = num_imputer.fit_transform(future_data[numerical_cols])
-
-    # Fill missing categorical values with most frequent
-    cat_imputer = SimpleImputer(strategy="most_frequent")
-    future_data[categorical_cols] = cat_imputer.fit_transform(future_data[categorical_cols])
-
-    # 🔍 Debugging: Print missing columns if any
-    missing_cols = set(trained_feature_cols) - set(future_data.columns)
-    st.warning(f"Warning: The following columns are missing from `future_data`: {missing_cols}")
+    # Reorder `future_data` to match training feature order
+    future_data = future_data[expected_features]
 
     # Predict values
     #preds = model.predict(future_data)
