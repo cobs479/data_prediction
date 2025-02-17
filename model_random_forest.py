@@ -172,6 +172,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     future_data['Predicted'] = preds
 
     # Display predictions
+    st.title("Future Data")
     st.dataframe(future_data)
 
     # Optional: Display graph and table
