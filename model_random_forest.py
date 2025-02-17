@@ -178,20 +178,16 @@ def predict_random_forest(field, start_date, end_date, location_select):
                 # ✅ If column doesn't exist in data, drop it
                 future_data.drop(columns=[col], inplace=True, errors='ignore')
 
-    # 🔍 Debugging: Show generated future data before prediction
-    print("Generated Future Data Sample:")
-    print(future_data.head())
-
     # Predict values
-    #preds = model.predict(future_data)
+    preds = model.predict(future_data)
 
     # Store predictions
-    #future_data['Predicted'] = preds
+    future_data['Predicted'] = preds
 
     # Display results
     st.dataframe(future_data)
 
-    #st.success("Prediction complete")
+    st.success("Prediction complete")
 
 
 def display_table(field, future_data, preds, start_date, end_date, location_select):
