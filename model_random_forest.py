@@ -148,11 +148,22 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Add location selection
     future_data['Location'] = location_select
 
-    # Ensure features match training data
+    # Extract feature columns from the model's preprocessor
     feature_cols = model.named_steps['preprocessor'].transformers[0][2] + model.named_steps['preprocessor'].transformers[1][2]
+
+    # 🔥 Use historical data to fill missing values instead of NaN
     for col in feature_cols:
         if col not in future_data.columns:
-            future_data[col] = np.nan  # Placeholder for missing columns
+            if col in data.columns:
+                # Fill with historical mean (better than NaN)
+                future_data[col] = data[col].mean()
+            else:
+                # If the column does not exist, fill with a default value (e.g., 0)
+                future_data[col] = 0
+
+    # 🔍 Debugging: Check if the features are correctly populated
+    print("Future Data Sample Before Prediction:")
+    print(future_data.head())
 
     # Predict values
     preds = model.predict(future_data)
@@ -160,12 +171,12 @@ def predict_random_forest(field, start_date, end_date, location_select):
     # Store predictions
     future_data['Predicted'] = preds
 
+    # Display predictions
     st.dataframe(future_data)
-    st.dataframe(preds)
 
-    # Display results
-    #display_table(field, future_data, preds, start_date, end_date, location_select)
-    #display_graph(field, future_data, preds, start_date, end_date, location_select)
+    # Optional: Display graph and table
+    # display_table(field, future_data, preds, start_date, end_date, location_select)
+    # display_graph(field, future_data, preds, start_date, end_date, location_select)
 
     st.success("Prediction complete")
 
