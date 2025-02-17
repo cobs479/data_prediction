@@ -146,7 +146,7 @@ def generate_future_data(X, start_date, end_date):
 
     # DEBUGGING: Confirm DateTime exists
     st.write("📌 Future Data with DateTime:")
-    st.dataframe(future_data.head())
+    st.dataframe(future_data.head()) 
 
     return future_data
 
