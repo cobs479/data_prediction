@@ -72,11 +72,16 @@ def predict_random_forest(field, start_date, end_date, location_select):
         print("Model saved.")
 
     # Handle Future Predictions
-    if os.path.exists(predict_file_path):
+    try:
         X_predict = pd.read_csv(predict_file_path)
-    else:
+        st.success(f"Loaded existing prediction file: {predict_file_path}")
+    except FileNotFoundError:
         st.warning(f"Prediction file for {end_date.year} not found. Generating future dataset...")
         X_predict = generate_future_data(X, start_date, end_date, location_select)
+    
+    if X_predict is None or X_predict.empty:
+        st.error("No valid data available for prediction. Please check your input parameters.")
+        return
 
     if X_predict is not None:
         preds = pipeline.predict(X_predict)
