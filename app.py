@@ -28,6 +28,11 @@ with st.form("prediction_form"):
     selected_end_date = st.date_input(
         "Select 'To' Date", pd.to_datetime("today"), key="end_date")
 
+    # Location selector
+    locations = ["Please select location", "PJ", "KL"]
+    selected_location = st.selectbox(
+        "Select location:", locations, key="dropdown_field_2")
+
     # Submit button inside the form
     submitted = st.form_submit_button("Predict")
 
