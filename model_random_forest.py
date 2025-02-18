@@ -164,6 +164,8 @@ def display_table(X, preds, start_date, end_date, location_select):
                             (results_df['Date-Time'] <= end_datetime) & 
                             (results_df['Location'] == location_select)]
 
+    results_df = results_df.sort_values(by='Date-Time')
+    
     # Display filtered table
     if results_df.empty:
         st.error(f"No predictions found for selected location ({location_select}) from {
@@ -203,6 +205,8 @@ def display_graph(X, preds, start_date, end_date, location_select):
     if filtered_data.empty:
         st.error(f"No predictions found for selected location ({location_select}) from {start_date_str} to {end_date_str}")
         return
+
+    filtered_data = filtered_data.sort_values(by='DateTime')
 
     # Extract unique locations
     unique_locations = filtered_data['Location'].unique()
