@@ -5,6 +5,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
+from datetime import datetime
 from scipy.interpolate import interp1d
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -174,15 +175,19 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X, first_year, last_year = load_all_data(data_folder)
+    
+    if first_year <= datetime.strptime(start_date, "%Y-%m-%d").year <= last_year and first_year <= datetime.strptime(end_date, "%Y-%m-%d").year <= last_year:
+        print("✅ The date range is within the year range.")
+    else:
+        print("❌ The date range is NOT within the year range.")
 
-    st.info(f"{start_date} {end_date} {first_year} {last_year}")
-
+    """
     if pd.to_datetime(start_date.strftime('%Y')) > pd.to_datetime(last_year) or pd.to_datetime(end_date.strftime('%Y')) < pd.to_datetime(first_year):
         #interpolate_data(X, start_date, end_date)
         st.success("Not within range")
     else:
         st.success("Within range")
-
+    """
     """
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
