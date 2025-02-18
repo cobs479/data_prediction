@@ -233,6 +233,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
         X_predict['Year'] = start_date.year
 
     X_predict = X_predict.replace("", np.nan)
+    X_predict = X_predict.replace(" ", np.nan)
 
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
