@@ -44,7 +44,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X = load_all_data(data_folder)
-    X_predict = pd.read_csv(predict_file_path)
+    X_predict = X
 
     # Check if the field is valid
     if field not in X.columns:
