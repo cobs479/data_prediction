@@ -176,7 +176,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X, first_year, last_year = load_all_data(data_folder)
     interpolate_data(X, start_date, end_date)
 
-    str.success(f"First year {first_year} and Last year {last_year}")
+    st.success(f"First year {first_year} and Last year {last_year}")
 
     """
     if field not in X.columns:
