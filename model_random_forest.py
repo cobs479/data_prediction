@@ -200,9 +200,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     X_predict.fillna(0, inplace=True)
 
-    st.dataframe(X_valid)
-    st.dataframe(X_predict)
-
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
@@ -214,6 +211,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
     cols = ['Datetime'] + categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
+
+    st.dataframe(X_valid)
+    st.dataframe(X_predict)
 
     location_in_num_mapping = {
             "Batu Muda": 1,
