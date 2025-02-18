@@ -153,6 +153,9 @@ def interpolate_data(weather_data, start_date, end_date):
 def load_all_data(data_folder='data'):
     all_files = [f for f in os.listdir(data_folder) if f.startswith('weather_') and f.endswith('.csv')]
     all_files.sort()
+
+    first_year = int(all_files[0].split('_')[1].split('.')[0])
+    last_year = int(all_files[-1].split('_')[1].split('.')[0])
     
     data_frames = []
     for file in all_files:
@@ -162,17 +165,15 @@ def load_all_data(data_folder='data'):
         data_frames.append(df)
 
     all_data = pd.concat(data_frames, ignore_index=True)
-    #st.success("Combined data")
-    #st.dataframe(all_data)
     
-    return all_data
+    return all_data, first_year, last_year
 
 
 def predict_random_forest(field, start_date, end_date, location_select):
 
     data_folder = 'data'
     
-    X = load_all_data(data_folder)
+    X, first_year, last_year = load_all_data(data_folder)
     interpolate_data(X, start_date, end_date)
 
     """
