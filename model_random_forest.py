@@ -50,7 +50,7 @@ def interpolate_data(weather_data):
     output_file = "data/interpolated_weather_data.csv"  # Change this as needed
     weather_data.to_csv(output_file, index=False)
     
-    print(f"Interpolated weather data saved to: {output_file}")
+    str.success(f"Interpolated weather data saved to: {output_file}")
 
 
 def load_all_data(data_folder='data'):
@@ -65,8 +65,8 @@ def load_all_data(data_folder='data'):
         data_frames.append(df)
 
     all_data = pd.concat(data_frames, ignore_index=True)
-    st.success("Combined data")
-    st.dataframe(all_data)
+    #st.success("Combined data")
+    #st.dataframe(all_data)
     
     return all_data
 
@@ -156,7 +156,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    st.dataframe(X_valid)
+    #st.dataframe(X_valid)
 
     display_graph(X_valid, preds, start_date, end_date, location_select)
     display_table(X_valid, preds, start_date, end_date, location_select)
