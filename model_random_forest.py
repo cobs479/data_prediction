@@ -33,18 +33,10 @@ def load_all_data(data_folder='data'):
 
 
 def predict_random_forest(field, start_date, end_date, location_select):
-    predict_file_path = f'data/weather_{end_date.year}.csv'
-
-    # Check if the prediction file exists
-    if not os.path.exists(predict_file_path):
-        st.error(f"Prediction file for year {
-            end_date.year} not found: {predict_file_path}")
-        return
 
     data_folder = 'data'
     
     X = load_all_data(data_folder)
-    X_predict = X
 
     # Check if the field is valid
     if field not in X.columns:
@@ -54,9 +46,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X.dropna(axis=0, subset=[field], inplace=True)
     y = X[field]
     X.drop([field], axis=1, inplace=True)
-    # Only if need to validate the predicted data
-    y_predict = X_predict[field]
-    X_predict.drop([field], axis=1, inplace=True)
 
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
@@ -70,7 +59,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     cols = categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
-    X_predict = X_predict[cols].copy()
 
     # Define the path for the saved model
     model_save_path = 'saved_model/RF_' + field + '.joblib'
@@ -109,40 +97,40 @@ def predict_random_forest(field, start_date, end_date, location_select):
         print("Model saved successfully.")
 
     # Change X set and do predictions
-    preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
+    preds = pipeline.predict(X_valid)  # Use X_valid for validation if needed
     print(preds)
 
     # Calculate mean absolute error
     mae_score = mean_absolute_error(
-        preds, y_predict)  # Use y_valid for validation
+        preds, y_valid)  # Use y_valid for validation
     print('MAE:', mae_score)
 
     # Calculate mean squared error (MSE)
-    mse_score = mean_squared_error(preds, y_predict)
+    mse_score = mean_squared_error(preds, y_valid)
     print('MSE:', mse_score)
 
     # Calculate root mean squared error (RMSE)
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    st.dataframe(X_predict)
+    st.dataframe(X_valid)
 
-    display_graph(X_predict, preds, start_date, end_date, location_select)
-    display_table(X_predict, preds, start_date, end_date, location_select)
+    display_graph(X_valid, preds, start_date, end_date, location_select)
+    display_table(X_valid, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
 
 
-def display_table(X_predict, preds, start_date, end_date, location_select):
+def display_table(X, preds, start_date, end_date, location_select):
     # Ensure Hour column is properly formatted as HH:MM
-    X_predict['Hour'] = X_predict['Hour'].astype(str).str.zfill(4)
-    X_predict['Formatted Hour'] = X_predict['Hour'].str[:2] + \
-        ":" + X_predict['Hour'].str[2:]
+    X['Hour'] = X['Hour'].astype(str).str.zfill(4)
+    X['Formatted Hour'] = X['Hour'].str[:2] + \
+        ":" + X['Hour'].str[2:]
 
     # Convert date columns into a full datetime format (YYYY-MM-DD HH:MM)
-    X_predict['DateTime'] = pd.to_datetime(
-        X_predict[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
-        ' ' + X_predict['Formatted Hour']
+    X['DateTime'] = pd.to_datetime(
+        X[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
+        ' ' + X['Formatted Hour']
     )
 
     # Mapping numerical locations to readable names
@@ -151,12 +139,12 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
         2: "Petaling Jaya",
         3: "Cheras"
     }
-    X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
+    X['Location'] = X['LocationInNum'].map(location_mapping)
 
     # Create a DataFrame for display
     results_df = pd.DataFrame({
-        'Date-Time': X_predict['DateTime'],
-        'Location': X_predict['Location'],
+        'Date-Time': X['DateTime'],
+        'Location': X['Location'],
         'Predicted Value': preds
     })
 
@@ -178,13 +166,13 @@ def display_table(X_predict, preds, start_date, end_date, location_select):
         st.dataframe(results_df, hide_index=True)
 
 
-def display_graph(X_predict, preds, start_date, end_date, location_select):
+def display_graph(X, preds, start_date, end_date, location_select):
     # Convert date inputs to datetime
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
 
     # Convert date columns into full datetime format
-    X_predict['DateTime'] = pd.to_datetime(X_predict[['Year', 'Month', 'Day']])
+    X['DateTime'] = pd.to_datetime(X[['Year', 'Month', 'Day']])
 
     # **Mapping numerical locations to readable names (Same as display_table)**
     location_mapping = {
@@ -192,16 +180,16 @@ def display_graph(X_predict, preds, start_date, end_date, location_select):
         2: "Petaling Jaya",
         3: "Cheras"
     }
-    X_predict['Location'] = X_predict['LocationInNum'].map(location_mapping)
+    X['Location'] = X['LocationInNum'].map(location_mapping)
 
     # Convert selected date range into formatted strings for display
     start_date_str = start_date.strftime('%d/%m/%Y')
     end_date_str = end_date.strftime('%d/%m/%Y')
 
     # Filter data within the selected date range
-    mask = (X_predict['DateTime'] >= start_date) & (
-        X_predict['DateTime'] <= end_date) & (X_predict['Location'] == location_select)
-    filtered_data = X_predict[mask]
+    mask = (X['DateTime'] >= start_date) & (
+        X['DateTime'] <= end_date) & (X['Location'] == location_select)
+    filtered_data = X[mask]
     filtered_preds = preds[mask]
 
     # If no data is found, display an error message
