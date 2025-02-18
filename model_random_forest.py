@@ -24,11 +24,14 @@ def interpolate_data(weather_data):
     start_date = "2024-01-01 00:00"  # Example start date (modify as needed)
     end_date = "2024-01-31 23:00"    # Example end date (modify as needed)
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
+
+    st.success(f"Original weather data")
+    st.dataframe(weather_data)
     
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
     weather_data = pd.merge(complete_weather_data, weather_data, on='Datetime', how='left')
 
-    st.success(f"Original weather data")
+    st.success(f"After merge weather data")
     st.dataframe(weather_data)
     
     exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
