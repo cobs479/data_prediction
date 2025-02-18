@@ -226,7 +226,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
     else:
-        X_predict.drop(['DateTemp', 'Date', 'Location', 'LocationInNum'], axis=1, inplace=True)
+        X_predict.drop(['DateTemp', 'Date', 'Location', 'LocationInNum', 'Timestamp'], axis=1, inplace=True)
         X_predict['Location'] = location_mapping[location_select]
         X_predict['LocationInNum'] = location_in_num_mapping[location_select]
         X_predict['Year'] = start_date.year
