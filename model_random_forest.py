@@ -91,7 +91,6 @@ def interpolate_data(weather_data):
     for variable in weather_variables:
         num_known = known_data[variable].count()
         num_interpolated = interpolated_data[variable].count()
-        st.write(f"{variable}: Known = {num_known}, Interpolated = {num_interpolated}")
     
     # Step 6: Create subplots
     num_vars = len(weather_variables)
