@@ -25,13 +25,13 @@ def interpolate_data(weather_data):
     end_date = "2024-01-31 23:00"    # Example end date (modify as needed)
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
 
-    st.success(f"Original weather data")
+    st.success(f"Original")
     st.dataframe(weather_data)
     
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
     weather_data = pd.merge(complete_weather_data, weather_data, on='Datetime', how='left')
 
-    st.success(f"After merge weather data")
+    st.success(f"After merge")
     st.dataframe(weather_data)
     
     exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
@@ -56,7 +56,7 @@ def interpolate_data(weather_data):
         missing_indices = weather_data[weather_data[col].isna()].index
         weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
 
-    st.success(f"Interpolated weather data")
+    st.success(f"Interpolated")
     st.dataframe(weather_data)
 
 
