@@ -96,7 +96,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     numerical_cols = [
         cname for cname in X_train_full.columns if X_train_full[cname].dtype in ['int64', 'float64']]
 
-    cols = categorical_cols + numerical_cols
+    cols = ['Datetime'] + categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
