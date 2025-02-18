@@ -65,8 +65,8 @@ def load_all_data(data_folder='data'):
         df.rename(columns={'Year_Month_Day_Hour': 'Datetime'}, inplace=True)
         data_frames.append(df)
 
-    st.warning("Loading all data")
     all_data = pd.concat(data_frames, ignore_index=True)
+    st.success("Combined data")
     st.dataframe(all_data)
     
     return all_data
