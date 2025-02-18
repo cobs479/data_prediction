@@ -184,6 +184,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
         st.warning("❌ The date range is NOT within the year range.")
 
     X_predict.rename(columns={'Year_Month_Day_Hour': 'Datetime'}, inplace=True)
+    X_predict['LocationInNum.1'] = ""
 
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
@@ -210,26 +211,24 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
+    location_in_num_mapping = {
+            "Batu Muda": 1,
+            "Petaling Jaya": 2,
+            "Cheras": 3
+        }
+
+    location_mapping = {
+            "Batu Muda": "KL",
+            "Petaling Jaya": "PJ",
+            "Cheras": "KL"
+        }
+    
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
     else:
         X_predict.drop(['DateTemp', 'Date', 'Location', 'LocationInNum'], axis=1, inplace=True)
-
-        location_in_num_mapping = {
-                "Batu Muda": 1,
-                "Petaling Jaya": 2,
-                "Cheras": 3
-            }
-
-        location_mapping = {
-                "Batu Muda": "KL",
-                "Petaling Jaya": "PJ",
-                "Cheras": "KL"
-            }
-        
         X_predict['Location'] = location_mapping[location_select]
         X_predict['LocationInNum'] = location_in_num_mapping[location_select]
-        X_predict['LocationInNum.1'] = location_in_num_mapping[location_select]
         X_predict['Year'] = start_date.year
 
     model_save_path = 'saved_model/RF_' + field + '.joblib'
@@ -279,7 +278,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    st.success("data")
     st.dataframe(X_valid)
     st.dataframe(X_predict)
 
