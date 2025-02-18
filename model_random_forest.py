@@ -262,6 +262,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
         joblib.dump(pipeline, model_save_path)
         print("Model saved successfully.")
 
+    X_predict = X_predict.replace("", np.nan)
+    X_predict = np.array(X_predict)
+    
     preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
     print(preds)
 
