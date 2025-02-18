@@ -262,24 +262,24 @@ def predict_random_forest(field, start_date, end_date, location_select):
         joblib.dump(pipeline, model_save_path)
         print("Model saved successfully.")
 
-    preds = pipeline.predict(X_valid)  # Use X_valid for validation if needed
+    preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
     print(preds)
 
     mae_score = mean_absolute_error(
-        preds, y_valid)  # Use y_valid for validation
+        preds, y_predict)  # Use y_valid for validation
     print('MAE:', mae_score)
 
-    mse_score = mean_squared_error(preds, y_valid)
+    mse_score = mean_squared_error(preds, y_predict)
     print('MSE:', mse_score)
 
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    st.dataframe(X_valid)
-    st.dataframe(X_predict)
+    #st.dataframe(X_valid)
+    #st.dataframe(X_predict)
 
-    display_graph(X_valid, preds, start_date, end_date, location_select)
-    display_table(X_valid, preds, start_date, end_date, location_select)
+    display_graph(X_predict, preds, start_date, end_date, location_select)
+    display_table(X_predict, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
 
