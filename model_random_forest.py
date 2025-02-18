@@ -33,43 +33,59 @@ def interpolate_data(weather_data):
     
     weather_data['Timestamp'] = weather_data['Datetime'].astype(np.int64) // 10**9
 
+    air_quality_vars = ["PM10", "PM25", "CO", "SO2", "NO2", "O3"]  # Air quality variables
+    other_vars = ["Temperature", "Humidity", "WindSpeed", "WindDirection", "SolarRadiation"]  # Other climate data
+    
+    # Step 6: Interpolation process
     for col in numeric_columns:
         known_data = weather_data.dropna(subset=[col])  # Get only known values
         if known_data.empty:
             print(f"Skipping {col} - No known values for interpolation")
             continue  # Skip if no known values exist
     
-        # Convert to numeric and drop any non-numeric values
+        # Convert to numeric and drop NaNs
         known_data[col] = pd.to_numeric(known_data[col], errors='coerce')
-        known_data = known_data.dropna(subset=[col])  # Drop remaining NaNs
+        known_data = known_data.dropna(subset=[col])
     
         # Debug: Check number of valid data points
-        if len(known_data) < 2:  # At least 2 points needed for interpolation
+        if len(known_data) < 3:  # At least 3 points needed for better interpolation
             print(f"Skipping {col} - Not enough data points for interpolation")
             continue
     
         # Ensure no duplicate timestamps
         known_data = known_data.drop_duplicates(subset=['Timestamp'])
     
-        X = known_data['Timestamp'].values  # Convert datetime to numerical format
-        y = known_data[col].values.astype(np.float64)  # Ensure float64
+        # Prepare input variables for interpolation
+        X = known_data['Timestamp'].values
+        y = known_data[col].values.astype(np.float64)
     
-        # Create interpolation function using linear extrapolation
         try:
-            interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
+            # Use different interpolation methods for air quality and other variables
+            if col in air_quality_vars:
+                interp_func = CubicSpline(X, y, extrapolate=True)  # Cubic spline for air quality variables
+            else:
+                interp_func = interp1d(X, y, kind='quadratic', fill_value='extrapolate', bounds_error=False)  # Quadratic interpolation for other variables
+    
+            # Apply interpolation to missing values
+            missing_indices = weather_data[weather_data[col].isna()].index
+            interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+    
+            # Step 7: Prevent unrealistic extreme values (IQR method)
+            q1, q3 = np.percentile(y, [25, 75])
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+            interpolated_values = np.clip(interpolated_values, lower_bound, upper_bound)
+    
+            # Assign interpolated values to the dataset
+            weather_data.loc[missing_indices, col] = interpolated_values
+    
         except Exception as e:
             print(f"Skipping {col} due to interpolation error: {e}")
             continue
     
-        # Apply interpolation to missing values
-        missing_indices = weather_data[weather_data[col].isna()].index
-        interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
-    
-        # Replace NaN or inf values with valid interpolations
-        interpolated_values = np.where(np.isfinite(interpolated_values), interpolated_values, np.nan)
-        weather_data.loc[missing_indices, col] = interpolated_values
-
-    st.success(f"Interpolated")
+    # Step 8: Display results in Streamlit
+    st.success("Interpolation Completed")
     st.dataframe(weather_data)
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
