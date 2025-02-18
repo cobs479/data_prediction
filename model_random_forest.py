@@ -198,6 +198,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
     y_predict = X_predict[field]
     X_predict.drop([field], axis=1, inplace=True)
 
+    X_predict.fillna(0, inplace=True)
+
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
