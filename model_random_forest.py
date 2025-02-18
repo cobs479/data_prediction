@@ -50,8 +50,8 @@ def interpolate_data(weather_data):
     output_file = "data/interpolated_weather_data.csv"  # Change this as needed
     weather_data.to_csv(output_file, index=False)
     
-    str.success(f"Interpolated weather data saved to: {output_file}")
-    str.dataframe(weather_data)
+    st.success(f"Interpolated weather data saved to: {output_file}")
+    st.dataframe(weather_data)
 
 
 def load_all_data(data_folder='data'):
