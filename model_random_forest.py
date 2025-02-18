@@ -193,8 +193,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     #X['CO'] = pd.to_numeric(X['CO'], errors='coerce')
     #X['CO'] = X['CO'].fillna(0)
 
-    X = pd.to_numeric(X, errors='coerce')
-    X = X.fillna(0)
+    X.fillna(0, inplace=True)
 
     y_predict = X_predict[field]
     X_predict.drop([field], axis=1, inplace=True)
