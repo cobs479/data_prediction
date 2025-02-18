@@ -16,27 +16,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
-def fourier_extrapolation(x, y, num_extrapolate=24 * 31):  # Extrapolate 31 days worth of hourly data
-    """
-    Perform Fourier Series extrapolation to capture seasonal trends.
-    """
-    n = len(y)
-    n_predict = num_extrapolate  # Number of points to predict
-
-    # Fourier Transform
-    freq = fft(y)
-    frequencies = np.fft.fftfreq(n)
-
-    # Keep only significant frequencies (avoid overfitting noise)
-    mask = np.abs(frequencies) > (1 / (24 * 7))  # Keep weekly trends
-    freq[mask] = 0  # Remove high-frequency noise
-
-    # Inverse Fourier Transform to reconstruct series
-    extrapolated_values = np.real(ifft(freq, n + n_predict))[-n_predict:]
-
-    return extrapolated_values
-
-
 def interpolate_data(weather_data):
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
@@ -76,29 +55,37 @@ def interpolate_data(weather_data):
     
         try:
             if col in air_quality_vars:
-                # Fourier-based extrapolation for air quality data
-                num_extrapolate = len(weather_data[weather_data[col].isna()])
-                extrapolated_values = fourier_extrapolation(X, y, num_extrapolate)
-                missing_indices = weather_data[weather_data[col].isna()].index
-                weather_data.loc[missing_indices, col] = extrapolated_values
+                # Use Seasonal Decomposition for air quality trends
+                period = 24 * 7  # Weekly pattern assumption
+                decomposed = seasonal_decompose(y, period=period, model='additive', extrapolate_trend='freq')
+                trend = decomposed.trend
+                interp_func = interp1d(X, trend, kind='linear', fill_value='extrapolate', bounds_error=False)
     
             else:
-                # Use Cubic Spline if enough data exists
-                if len(known_data) >= 4:
-                    interp_func = CubicSpline(X, y, extrapolate=True)
-                else:
-                    interp_func = interp1d(X, y, kind='quadratic', fill_value='extrapolate', bounds_error=False)
+                # Use Polynomial Regression for smoother weather patterns
+                poly_fit = np.polyfit(X, y, 3)
+                interp_func = np.poly1d(poly_fit)
     
-                # Apply interpolation to missing values
-                missing_indices = weather_data[weather_data[col].isna()].index
-                interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+            # Apply interpolation to missing values
+            missing_indices = weather_data[weather_data[col].isna()].index
+            interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
     
-                # Assign interpolated values
-                weather_data.loc[missing_indices, col] = interpolated_values
+            # Ensure no extreme values using IQR
+            q1, q3 = np.percentile(y, [25, 75])
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+            interpolated_values = np.clip(interpolated_values, lower_bound, upper_bound)
+    
+            # Assign interpolated values
+            weather_data.loc[missing_indices, col] = interpolated_values
     
         except Exception as e:
             print(f"Skipping {col} due to interpolation error: {e}")
             continue
+    
+    weather_data[numeric_columns] = weather_data[numeric_columns].interpolate(method='spline', order=3, limit_direction='both')
+    weather_data[numeric_columns] = weather_data[numeric_columns].fillna(method='ffill').fillna(method='bfill')
     
     st.success("Interpolation Completed")
     st.dataframe(weather_data)
