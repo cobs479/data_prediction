@@ -26,7 +26,6 @@ def load_all_data(data_folder='data'):
 
     st.warning("Loading all data")
     all_data = pd.concat(data_frames, ignore_index=True)
-    all_data.drop('LocationInNum.1', axis=1, inplace=True)
     st.dataframe(all_data)
     
     return all_data
