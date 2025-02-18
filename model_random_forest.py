@@ -234,8 +234,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     X_predict = X_predict.replace("", 0)
     X_predict = X_predict.replace(" ", 0)
-    y_predict = y_predict.replace("", 0)
-    y_predict = y_predict.replace(" ", 0)
 
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
@@ -274,6 +272,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
     print(preds)
 
+    """
     mae_score = mean_absolute_error(
         preds, y_predict)  # Use y_valid for validation
     print('MAE:', mae_score)
@@ -283,6 +282,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
+    """
 
     #st.dataframe(X_valid)
     #st.dataframe(X_predict)
