@@ -31,25 +31,29 @@ def interpolate_data(weather_data):
     exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
     numeric_columns = [col for col in weather_data.columns if col not in exclude_columns]
     
+    weather_data['Timestamp'] = weather_data['Datetime'].astype(np.int64) // 10**9
+
+    # Step 8: Interpolate & extrapolate missing values based on known data (2017-2023)
     for col in numeric_columns:
-        known_data = weather_data.dropna(subset=[col])  # Remove rows where this column is NaN
+        known_data = weather_data.dropna(subset=[col])  # Get only known values
         if known_data.empty:
-            continue  # Skip interpolation if no known values exist
-    
-        X = known_data['Datetime'].astype(np.int64) // 10**9  # Convert datetime to numerical format (Unix timestamp)
+            print(f"Skipping {col} - No known values for interpolation")
+            continue  # Skip if no known values exist
+
+        X = known_data['Timestamp'].values  # Convert datetime to numerical format
         y = known_data[col].values
-    
-        # Create interpolation function
+
+        # Create interpolation function using linear extrapolation
         interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate')
-    
+
         # Apply interpolation to missing values
         missing_indices = weather_data[weather_data[col].isna()].index
-        weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Datetime'].astype(np.int64) // 10**9)
-    
-    # Step 8: Save the final interpolated dataset
-    output_file = "data/interpolated_weather_data.csv"  # Change this as needed
+        weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+
+    # Step 9: Save the final interpolated dataset
+    output_file = os.path.join(data_folder, "interpolated_weather_data.csv")
     weather_data.to_csv(output_file, index=False)
-    
+
     st.success(f"Interpolated weather data saved to: {output_file}")
     st.dataframe(weather_data)
 
