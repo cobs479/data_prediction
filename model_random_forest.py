@@ -234,6 +234,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     X_predict = X_predict.replace("", 0)
     X_predict = X_predict.replace(" ", 0)
+    y_predict = y_predict.replace("", 0)
+    y_predict = y_predict.replace(" ", 0)
 
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
