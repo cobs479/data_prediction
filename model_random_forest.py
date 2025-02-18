@@ -219,9 +219,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
             "Petaling Jaya": "PJ",
             "Cheras": "KL"
         }
-
-    st.dataframe(X_valid)
-    st.dataframe(X_predict)
     
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
@@ -279,6 +276,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
+
+    st.dataframe(X_valid)
+    st.dataframe(X_predict)
 
     display_graph(X_predict, preds, start_date, end_date, location_select)
     display_table(X_predict, preds, start_date, end_date, location_select)
