@@ -21,34 +21,36 @@ def interpolate_data():
     data_folder = 'data'
     
     weather_data = load_all_data(data_folder)
-    
-    # Step 3: Convert 'Datetime' column to proper datetime format
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
-    
-    # Step 4: Ensure data is sorted by time
     weather_data = weather_data.sort_values(by='Datetime').reset_index(drop=True)
     
-    # Step 5: Define the dynamic date range for interpolation
     start_date = "2024-01-01 00:00"  # Example start date (modify as needed)
-    end_date = "2024-12-31 23:00"    # Example end date (modify as needed)
+    end_date = "2024-01-31 23:00"    # Example end date (modify as needed)
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
     
-    # Step 6: Create a complete time index DataFrame
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
-    
-    # Merge to ensure we have a full dataset with all timestamps
     weather_data = pd.merge(complete_weather_data, weather_data, on='Datetime', how='left')
     
-    # Step 7: Identify numerical columns for interpolation (excluding datetime and categorical columns)
-    exclude_columns = ['Datetime', 'Location', 'LocationInNum']
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
     numeric_columns = [col for col in weather_data.columns if col not in exclude_columns]
     
-    # Step 8: Perform linear interpolation on missing data
     for col in numeric_columns:
-        weather_data[col] = weather_data[col].interpolate(method='linear', limit_direction='both')
+        known_data = weather_data.dropna(subset=[col])  # Remove rows where this column is NaN
+        if known_data.empty:
+            continue  # Skip interpolation if no known values exist
     
-    # Step 9: Save the final interpolated dataset
-    output_file = "/path/to/output/interpolated_weather_data.csv"  # Change this as needed
+        X = known_data['Datetime'].astype(np.int64) // 10**9  # Convert datetime to numerical format (Unix timestamp)
+        y = known_data[col].values
+    
+        # Create interpolation function
+        interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate')
+    
+        # Apply interpolation to missing values
+        missing_indices = weather_data[weather_data[col].isna()].index
+        weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Datetime'].astype(np.int64) // 10**9)
+    
+    # Step 8: Save the final interpolated dataset
+    output_file = "data/interpolated_weather_data.csv"  # Change this as needed
     weather_data.to_csv(output_file, index=False)
     
     print(f"Interpolated weather data saved to: {output_file}")
@@ -77,6 +79,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X = load_all_data(data_folder)
+    interpolate_data()
 
     # Check if the field is valid
     if field not in X.columns:
