@@ -223,6 +223,10 @@ def predict_random_forest(field, start_date, end_date, location_select):
             "Petaling Jaya": "PJ",
             "Cheras": "KL"
         }
+
+    for col in cols:
+        if col not in X_predict.columns:
+            X_predict[col] = 0
     
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
