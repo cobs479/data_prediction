@@ -279,6 +279,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
+    st.success("data")
     st.dataframe(X_valid)
     st.dataframe(X_predict)
 
