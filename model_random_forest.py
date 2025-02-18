@@ -89,14 +89,15 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Check if there is an existing saved model
     if os.path.exists(model_save_path):
-        print("Loading model from previous save...")
-        pipeline = joblib.load(model_save_path)
+        #print("Loading model from previous save...")
+        #pipeline = joblib.load(model_save_path)
+        print("Building and training a new model...")
+        pipeline.fit(X_train, y_train)
+        joblib.dump(pipeline, model_save_path)
+        print("Model saved successfully.")
     else:
         print("Building and training a new model...")
-        # Train the model
         pipeline.fit(X_train, y_train)
-
-        # Save the model pipeline to file
         joblib.dump(pipeline, model_save_path)
         print("Model saved successfully.")
 
