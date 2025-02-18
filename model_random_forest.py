@@ -192,6 +192,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X['CO'] = pd.to_numeric(X['CO'], errors='coerce')
     X['CO'] = X['CO'].fillna(0)
 
+    y_predict = X_predict[field]
+    X_predict.drop([field], axis=1, inplace=True)
+
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
@@ -203,6 +206,28 @@ def predict_random_forest(field, start_date, end_date, location_select):
     cols = ['Datetime'] + categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
+
+    if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
+        X_predict = X_predict[cols].copy()
+    else:
+        X_predict.drop(['DateTemp', 'Date', 'Year', 'Month', 'Day', 'Hour', 'Location', 'LocationInNum'], axis=1, inplace=True)
+
+        location_in_num_mapping = {
+                "Batu Muda": 1,
+                "Petaling Jaya": 2,
+                "Cheras": 3
+            }
+
+        location_mapping = {
+                "Batu Muda": "KL",
+                "Petaling Jaya": "PJ",
+                "Cheras": "KL"
+            }
+        
+        X_predict['Location'] = location_mapping[location_select]
+        X_predict['LocationInNum'] = location_in_num_mapping[location_select]
+        X_predict['LocationInNum.1'] = location_in_num_mapping[location_select]
+        X_predict['Year'] = start_date.year
 
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
