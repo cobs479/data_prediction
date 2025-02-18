@@ -29,7 +29,7 @@ def interpolate_data(weather_data):
     st.dataframe(weather_data)
     
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
-    weather_data = pd.merge(complete_weather_data, weather_data, on='Datetime', how='left')
+    weather_data = pd.merge(weather_data, complete_weather_data, on='Datetime', how='outer')
 
     st.success(f"After merge")
     st.dataframe(weather_data)
