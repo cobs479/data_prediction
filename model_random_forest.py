@@ -25,8 +25,10 @@ def load_all_data(data_folder='data'):
         data_frames.append(df)
 
     st.warning("Loading all data")
+    all_data = pd.concat(data_frames, ignore_index=True)
+    st.dataframe(all_data)
     
-    return pd.concat(data_frames, ignore_index=True)
+    return all_data
 
 
 def predict_random_forest(field, start_date, end_date, location_select):
