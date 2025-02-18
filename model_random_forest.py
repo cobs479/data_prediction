@@ -189,8 +189,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     y = X[field]
     X.drop([field], axis=1, inplace=True)
 
-    X['CO'] = pd.to_numeric(X['CO'], errors='coerce')
-
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
@@ -199,7 +197,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     numerical_cols = [
         cname for cname in X_train_full.columns if X_train_full[cname].dtype in ['int64', 'float64']]
 
-    cols = ['Datetime'] + categorical_cols + numerical_cols
+    cols = ['Datetime', 'CO'] + categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
