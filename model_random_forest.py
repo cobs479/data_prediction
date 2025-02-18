@@ -167,7 +167,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X = load_all_data(data_folder)
-    interpolate_data(X)
+    interpolate_data(X, start_date, end_date)
 
     # Check if the field is valid
     if field not in X.columns:
