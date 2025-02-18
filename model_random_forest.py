@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
-def interpolate_data(weather_data):
+def interpolate_data(weather_data, start_date, end_date):
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
     weather_data = weather_data.sort_values(by='Datetime').reset_index(drop=True)
@@ -42,51 +42,41 @@ def interpolate_data(weather_data):
             print(f"Skipping {col} - No known values for interpolation")
             continue  
     
-        # Convert to numeric and drop NaNs
         known_data[col] = pd.to_numeric(known_data[col], errors='coerce')
         known_data = known_data.dropna(subset=[col])
     
-        # Debug: Check number of valid data points
         if len(known_data) < 3:  # At least 3 points needed for interpolation
             print(f"Skipping {col} - Not enough data points for interpolation")
             continue
     
-        # Ensure no duplicate timestamps
         known_data = known_data.drop_duplicates(subset=['Timestamp'])
     
-        # Prepare input variables for interpolation
         X = known_data['Timestamp'].values
         y = known_data[col].values.astype(np.float64)
     
         try:
             if col in air_quality_vars:
                 if len(known_data) >= 4:
-                    # Use LOESS smoothing for air quality data (better at following patterns)
                     smooth_values = lowess(y, X, frac=0.1, return_sorted=False)
                     interp_func = interp1d(X, smooth_values, kind='linear', fill_value='extrapolate', bounds_error=False)
                 else:
-                    # Use Linear Interpolation for air quality data if LOESS fails
                     interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
     
             else:
-                # Use Cubic Spline if sufficient data, otherwise fallback to linear
                 if len(known_data) >= 4:
                     interp_func = CubicSpline(X, y, extrapolate=True)
                 else:
                     interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
     
-            # Apply interpolation to missing values
             missing_indices = weather_data[weather_data[col].isna()].index
             interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
     
-            # Step 7: Prevent extreme values using IQR
             q1, q3 = np.percentile(y, [25, 75])
             iqr = q3 - q1
             lower_bound = q1 - 1.5 * iqr
             upper_bound = q3 + 1.5 * iqr
             interpolated_values = np.clip(interpolated_values, lower_bound, upper_bound)
     
-            # Assign interpolated values
             weather_data.loc[missing_indices, col] = interpolated_values
     
         except Exception as e:
@@ -95,7 +85,10 @@ def interpolate_data(weather_data):
     
     weather_data[numeric_columns] = weather_data[numeric_columns].interpolate(method='linear', limit_direction='both')
     weather_data[numeric_columns] = weather_data[numeric_columns].fillna(method='ffill').fillna(method='bfill')
-    
+
+    return weather_data
+
+    """
     st.success("Interpolation Completed")
     st.dataframe(weather_data)
 
@@ -148,6 +141,7 @@ def interpolate_data(weather_data):
         st.pyplot(fig)  # ✅ Streamlit way to display Matplotlib figures
     else:
         st.write("No valid data available for any variable. No graph drawn.")
+    """
     
 
 def load_all_data(data_folder='data'):
