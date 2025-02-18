@@ -16,6 +16,27 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
+def fourier_extrapolation(x, y, num_extrapolate=24 * 31):  # Extrapolate 31 days worth of hourly data
+    """
+    Perform Fourier Series extrapolation to capture seasonal trends.
+    """
+    n = len(y)
+    n_predict = num_extrapolate  # Number of points to predict
+
+    # Fourier Transform
+    freq = fft(y)
+    frequencies = np.fft.fftfreq(n)
+
+    # Keep only significant frequencies (avoid overfitting noise)
+    mask = np.abs(frequencies) > (1 / (24 * 7))  # Keep weekly trends
+    freq[mask] = 0  # Remove high-frequency noise
+
+    # Inverse Fourier Transform to reconstruct series
+    extrapolated_values = np.real(ifft(freq, n + n_predict))[-n_predict:]
+
+    return extrapolated_values
+
+
 def interpolate_data(weather_data):
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
@@ -35,7 +56,7 @@ def interpolate_data(weather_data):
 
     air_quality_vars = ["PM10", "PM25", "CO", "SO2", "NO2", "O3"]  # Air quality variables
     other_vars = ["Temperature", "Humidity", "WindSpeed", "WindDirection", "Evaporation", "GlobalRadiation", "SolarRadiation", "Usage", "MaxDemand", "Bill"]  # Other climate data
-    
+
     for col in numeric_columns:
         known_data = weather_data.dropna(subset=[col])  # Get only known values
         if known_data.empty:
@@ -46,11 +67,6 @@ def interpolate_data(weather_data):
         known_data[col] = pd.to_numeric(known_data[col], errors='coerce')
         known_data = known_data.dropna(subset=[col])
     
-        # Debug: Check number of valid data points
-        if len(known_data) < 3:  # At least 3 points needed for interpolation
-            print(f"Skipping {col} - Not enough data points for interpolation")
-            continue
-    
         # Ensure no duplicate timestamps
         known_data = known_data.drop_duplicates(subset=['Timestamp'])
     
@@ -60,42 +76,29 @@ def interpolate_data(weather_data):
     
         try:
             if col in air_quality_vars:
-                if len(known_data) >= 4:
-                    # Use LOESS smoothing for air quality data (better at following patterns)
-                    smooth_values = lowess(y, X, frac=0.1, return_sorted=False)
-                    interp_func = interp1d(X, smooth_values, kind='linear', fill_value='extrapolate', bounds_error=False)
-                else:
-                    # Use Linear Interpolation for air quality data if LOESS fails
-                    interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
+                # Fourier-based extrapolation for air quality data
+                num_extrapolate = len(weather_data[weather_data[col].isna()])
+                extrapolated_values = fourier_extrapolation(X, y, num_extrapolate)
+                missing_indices = weather_data[weather_data[col].isna()].index
+                weather_data.loc[missing_indices, col] = extrapolated_values
     
             else:
-                # Use Cubic Spline if sufficient data, otherwise fallback to linear
+                # Use Cubic Spline if enough data exists
                 if len(known_data) >= 4:
                     interp_func = CubicSpline(X, y, extrapolate=True)
                 else:
-                    interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
+                    interp_func = interp1d(X, y, kind='quadratic', fill_value='extrapolate', bounds_error=False)
     
-            # Apply interpolation to missing values
-            missing_indices = weather_data[weather_data[col].isna()].index
-            interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+                # Apply interpolation to missing values
+                missing_indices = weather_data[weather_data[col].isna()].index
+                interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
     
-            # Step 7: Prevent extreme values using IQR
-            q1, q3 = np.percentile(y, [25, 75])
-            iqr = q3 - q1
-            lower_bound = q1 - 1.5 * iqr
-            upper_bound = q3 + 1.5 * iqr
-            interpolated_values = np.clip(interpolated_values, lower_bound, upper_bound)
-    
-            # Assign interpolated values
-            weather_data.loc[missing_indices, col] = interpolated_values
+                # Assign interpolated values
+                weather_data.loc[missing_indices, col] = interpolated_values
     
         except Exception as e:
             print(f"Skipping {col} due to interpolation error: {e}")
             continue
-    
-    # Step 8: Ensure no missing values remain by forward/backward filling
-    weather_data[numeric_columns] = weather_data[numeric_columns].interpolate(method='linear', limit_direction='both')
-    weather_data[numeric_columns] = weather_data[numeric_columns].fillna(method='ffill').fillna(method='bfill')
     
     st.success("Interpolation Completed")
     st.dataframe(weather_data)
