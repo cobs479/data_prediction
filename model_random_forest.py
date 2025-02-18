@@ -176,9 +176,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X, first_year, last_year = load_all_data(data_folder)
     
     if first_year <= pd.to_datetime(start_date.strftime('%Y-%m-%d')).year <= last_year and first_year <= pd.to_datetime(end_date.strftime('%Y-%m-%d')).year <= last_year:
-        print("✅ The date range is within the year range.")
+        st.warning("✅ The date range is within the year range.")
     else:
-        print("❌ The date range is NOT within the year range.")
+        st.warning("❌ The date range is NOT within the year range.")
 
     """
     if pd.to_datetime(start_date.strftime('%Y')) > pd.to_datetime(last_year) or pd.to_datetime(end_date.strftime('%Y')) < pd.to_datetime(first_year):
