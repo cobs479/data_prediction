@@ -14,8 +14,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
+def load_all_data(data_folder='data'):
+    """Load all available weather data CSV files for training."""
+    all_files = [f for f in os.listdir(data_folder) if f.startswith('weather_') and f.endswith('.csv')]
+    all_files.sort()
+    
+    data_frames = []
+    for file in all_files:
+        df = pd.read_csv(os.path.join(data_folder, file))
+        df['Year'] = int(file.split('_')[1].split('.')[0])  # Extract year from filename
+        data_frames.append(df)
+    
+    return pd.concat(data_frames, ignore_index=True)
+
+
 def predict_random_forest(field, start_date, end_date, location_select):
-    train_file_path = 'data/weather_2021.csv'
     predict_file_path = f'data/weather_{end_date.year}.csv'
 
     # Check if the prediction file exists
@@ -24,7 +37,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
             end_date.year} not found: {predict_file_path}")
         return
 
-    X = pd.read_csv(train_file_path)
+    data_folder = 'data'
+    
+    X = load_all_data(data_folder)
     X_predict = pd.read_csv(predict_file_path)
 
     # Check if the field is valid
