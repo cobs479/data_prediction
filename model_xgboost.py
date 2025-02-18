@@ -166,7 +166,7 @@ def load_all_data(data_folder='data'):
     return all_data, first_year, last_year
 
 
-def predict_random_forest(field, start_date, end_date, location_select):
+def predict_xgboost(field, start_date, end_date, location_select):
 
     data_folder = 'data'
     
