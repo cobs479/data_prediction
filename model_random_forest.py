@@ -86,7 +86,7 @@ def interpolate_data(weather_data, start_date, end_date):
     weather_data[numeric_columns] = weather_data[numeric_columns].interpolate(method='linear', limit_direction='both')
     weather_data[numeric_columns] = weather_data[numeric_columns].fillna(method='ffill').fillna(method='bfill')
 
-    #weather_data = weather_data[weather_data['_merge'] == 'right_only'].drop(columns=['_merge'])
+    weather_data = weather_data[weather_data['_merge'] == 'right_only'].drop(columns=['_merge'])
 
     st.success("Interpolated")
     st.dataframe(weather_data)
