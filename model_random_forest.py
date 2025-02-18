@@ -184,6 +184,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_predict['LocationInNum.1'] = ""
     X_predict = X_predict.replace("", 0)
     X_predict = X_predict.replace(" ", 0)
+    X_predict = X_predict.fillna(0)
 
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
