@@ -73,30 +73,50 @@ def interpolate_data(weather_data):
     st.dataframe(weather_data)
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
-    
-    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp', 'Timestamp']
+
+    # Step 3: Identify numerical weather variables (exclude non-numeric columns)
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp']
     weather_variables = [col for col in weather_data.columns if col not in exclude_columns]
     
-    known_data = weather_data[weather_data['Datetime'] < '2024-01-01']  # Actual (2017-2023)
-    interpolated_data = weather_data[weather_data['Datetime'] >= '2024-01-01']  # Interpolated (2024)
+    # Step 4: Separate actual vs. interpolated data
+    known_data = weather_data[weather_data['Datetime'] < '2024-01-01'].copy()  # Actual (2017-2023)
+    interpolated_data = weather_data[weather_data['Datetime'] >= '2024-01-01'].copy()  # Interpolated (2024)
     
+    # Step 5: Ensure all variables are numeric (Convert to float and remove NaNs)
+    for variable in weather_variables:
+        known_data[variable] = pd.to_numeric(known_data[variable], errors='coerce')
+        interpolated_data[variable] = pd.to_numeric(interpolated_data[variable], errors='coerce')
+    
+    # Step 6: Create subplots
     num_vars = len(weather_variables)
     fig, axes = plt.subplots(nrows=num_vars, ncols=1, figsize=(12, 4 * num_vars), sharex=True)
     
+    # Step 7: Plot each weather variable
     for i, variable in enumerate(weather_variables):
         ax = axes[i]
-        ax.plot(known_data['Datetime'], known_data[variable], 'b-', label="Actual Data (2017-2023)")
-        ax.plot(interpolated_data['Datetime'], interpolated_data[variable], 'r--', label="Interpolated Data (2024)")
+    
+        # Drop NaN values to avoid plotting errors
+        known_plot = known_data[['Datetime', variable]].dropna()
+        interp_plot = interpolated_data[['Datetime', variable]].dropna()
+    
+        if known_plot.empty or interp_plot.empty:
+            print(f"Skipping {variable} - No valid data to plot")
+            continue
+    
+        ax.plot(known_plot['Datetime'], known_plot[variable], 'b-', label="Actual Data (2017-2023)")
+        ax.plot(interp_plot['Datetime'], interp_plot[variable], 'r--', label="Interpolated Data (2024)")
+        
         ax.set_ylabel(variable)
         ax.legend()
         ax.grid()
     
+    # Step 8: Customize the figure
     plt.xlabel("Date")
     plt.suptitle("Interpolation of Weather Variables from 2017 to 2024")
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
-
+    
 
 def load_all_data(data_folder='data'):
     all_files = [f for f in os.listdir(data_folder) if f.startswith('weather_') and f.endswith('.csv')]
