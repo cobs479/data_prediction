@@ -182,7 +182,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
         X_predict = interpolate_data(X, start_date, end_date)
         st.warning("❌ The date range is NOT within the year range.")
 
-    """
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
 
@@ -249,13 +248,12 @@ def predict_random_forest(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    #st.dataframe(X_valid)
+    st.dataframe(X_valid)
 
     display_graph(X_valid, preds, start_date, end_date, location_select)
     display_table(X_valid, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
-    """
 
 
 def display_table(X, preds, start_date, end_date, location_select):
