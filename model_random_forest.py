@@ -75,7 +75,7 @@ def interpolate_data(weather_data):
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
 
     # Step 3: Identify numerical weather variables (exclude non-numeric columns)
-    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp']
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp', 'Year', 'Timestamp']
     weather_variables = [col for col in weather_data.columns if col not in exclude_columns]
     
     # Step 4: Separate actual vs. interpolated data
