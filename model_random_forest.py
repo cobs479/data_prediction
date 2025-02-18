@@ -270,7 +270,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
         print("Model saved successfully.")
     
     preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
-    #preds = np.nan_to_num(preds, nan=0.0)
+    preds = np.nan_to_num(preds, nan=0.0)
 
     mae_score = mean_absolute_error(
         preds, y_predict)  # Use y_valid for validation
