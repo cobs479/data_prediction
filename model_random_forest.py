@@ -248,14 +248,14 @@ def predict_random_forest(field, start_date, end_date, location_select):
         steps=[('preprocessor', preprocessor), ('model', model)])
 
     if os.path.exists(model_save_path):
-        print("Loading model from previous save...")
-        pipeline = joblib.load(model_save_path)
+        #print("Loading model from previous save...")
+        #pipeline = joblib.load(model_save_path)
 
         #Must force rebuild model if the columns are different
-        #print("Building and training a new model...")
-        #pipeline.fit(X_train, y_train)
-        #joblib.dump(pipeline, model_save_path)
-        #print("Model saved successfully.")
+        print("Building and training a new model...")
+        pipeline.fit(X_train, y_train)
+        joblib.dump(pipeline, model_save_path)
+        print("Model saved successfully.")
     else:
         print("Building and training a new model...")
         pipeline.fit(X_train, y_train)
