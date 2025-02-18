@@ -235,7 +235,7 @@ def predict_xgboost(field, start_date, end_date, location_select):
         X_predict['LocationInNum'] = location_in_num_mapping[location_select]
         X_predict['Year'] = start_date.year
 
-    model_save_path = 'saved_model/RF_' + field + '.joblib'
+    model_save_path = 'saved_model/XGB_' + field + '.joblib'
 
     numerical_transformer = SimpleImputer(strategy='most_frequent')
     categorical_transformer = Pipeline(steps=[
@@ -249,27 +249,35 @@ def predict_xgboost(field, start_date, end_date, location_select):
             ('cat', categorical_transformer, categorical_cols)
         ])
 
-    model = RandomForestRegressor(n_estimators=100, random_state=0)
+    pipeline = Pipeline(steps=[('preprocessor', preprocessor)])
 
-    pipeline = Pipeline(
-        steps=[('preprocessor', preprocessor), ('model', model)])
+    X_train = pipeline.fit_transform(X_train)
+    X_valid = pipeline.transform(X_valid)
+    X_predict = pipeline.transform(X_predict)
 
     if os.path.exists(model_save_path):
         print("Loading model from previous save...")
-        pipeline = joblib.load(model_save_path)
+        model = joblib.load(model_save_path)
 
-        #Must force rebuild model if the columns are different
         #print("Building and training a new model...")
-        #pipeline.fit(X_train, y_train)
-        #joblib.dump(pipeline, model_save_path)
+        #model = XGBRegressor(random_state=0, n_estimators=1000,
+        #                     learning_rate=0.05, early_stopping_rounds=5)
+        #model.fit(X_train, y_train,
+        #          eval_set=[(X_valid, y_valid)],
+        #          verbose=False)
+        #joblib.dump(model, model_save_path)
         #print("Model saved successfully.")
     else:
         print("Building and training a new model...")
-        pipeline.fit(X_train, y_train)
-        joblib.dump(pipeline, model_save_path)
+        model = XGBRegressor(random_state=0, n_estimators=1000,
+                             learning_rate=0.05, early_stopping_rounds=5)
+        model.fit(X_train, y_train,
+                  eval_set=[(X_valid, y_valid)],
+                  verbose=False)
+        joblib.dump(model, model_save_path)
         print("Model saved successfully.")
     
-    preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
+    preds = model.predict(X_predict)  # Use X_valid for validation if needed
     preds = np.nan_to_num(preds, nan=0.0)
 
     mae_score = mean_absolute_error(
