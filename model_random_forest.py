@@ -50,11 +50,7 @@ def interpolate_data(weather_data):
         missing_indices = weather_data[weather_data[col].isna()].index
         weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
 
-    # Step 9: Save the final interpolated dataset
-    output_file = os.path.join(data_folder, "interpolated_weather_data.csv")
-    weather_data.to_csv(output_file, index=False)
-
-    st.success(f"Interpolated weather data saved to: {output_file}")
+    st.success(f"Interpolated weather data")
     st.dataframe(weather_data)
 
 
