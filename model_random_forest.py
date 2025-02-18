@@ -175,10 +175,10 @@ def predict_random_forest(field, start_date, end_date, location_select):
     
     X, first_year, last_year = load_all_data(data_folder)
 
+    st.info("{start_date} {end_date} {first_year} {last_year}")
+
     if pd.to_datetime(start_date.strftime('%Y')) > pd.to_datetime(last_year) or pd.to_datetime(end_date.strftime('%Y')) < pd.to_datetime(first_year):
         #interpolate_data(X, start_date, end_date)
-        st.warning("First range {pd.to_datetime(start_date.strftime('%Y'))}")
-        st.warning("Second range {pd.to_datetime(end_date.strftime('%Y'))}")
         st.success("Not within range")
     else:
         st.success("Within range")
