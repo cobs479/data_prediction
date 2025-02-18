@@ -16,11 +16,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
-def interpolate_data():
+def interpolate_data(weather_data):
 
-    data_folder = 'data'
-    
-    weather_data = load_all_data(data_folder)
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
     weather_data = weather_data.sort_values(by='Datetime').reset_index(drop=True)
     
@@ -79,7 +76,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X = load_all_data(data_folder)
-    interpolate_data()
+    interpolate_data(X)
 
     # Check if the field is valid
     if field not in X.columns:
