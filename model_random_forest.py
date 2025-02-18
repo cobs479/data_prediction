@@ -15,7 +15,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 def load_all_data(data_folder='data'):
-    """Load all available weather data CSV files for training."""
     all_files = [f for f in os.listdir(data_folder) if f.startswith('weather_') and f.endswith('.csv')]
     all_files.sort()
     
@@ -24,6 +23,8 @@ def load_all_data(data_folder='data'):
         df = pd.read_csv(os.path.join(data_folder, file))
         df['Year'] = int(file.split('_')[1].split('.')[0])  # Extract year from filename
         data_frames.append(df)
+
+    st.warning("Loading all data")
     
     return pd.concat(data_frames, ignore_index=True)
 
