@@ -192,12 +192,15 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
+    X_train_full['CO'] = X_train_full['CO'].replace("", "0").astype(float)
+    X_valid_full['CO'] = X_valid_full['CO'].replace("", "0").astype(float)
+
     categorical_cols = [cname for cname in X_train_full.columns if X_train_full[cname].nunique() < 20 and
                         X_train_full[cname].dtype == "object"]
     numerical_cols = [
         cname for cname in X_train_full.columns if X_train_full[cname].dtype in ['int64', 'float64']]
 
-    cols = ['Datetime', 'CO'] + categorical_cols + numerical_cols
+    cols = ['Datetime'] + categorical_cols + numerical_cols
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
