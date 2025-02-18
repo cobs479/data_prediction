@@ -93,7 +93,6 @@ def interpolate_data(weather_data):
             print(f"Skipping {col} due to interpolation error: {e}")
             continue
     
-    # Step 8: Ensure no missing values remain by forward/backward filling
     weather_data[numeric_columns] = weather_data[numeric_columns].interpolate(method='linear', limit_direction='both')
     weather_data[numeric_columns] = weather_data[numeric_columns].fillna(method='ffill').fillna(method='bfill')
     
