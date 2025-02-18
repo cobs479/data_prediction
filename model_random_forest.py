@@ -249,6 +249,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     print('RMSE:', rmse_score)
 
     st.dataframe(X_valid)
+    st.dataframe(X_predict)
 
     display_graph(X_valid, preds, start_date, end_date, location_select)
     display_table(X_valid, preds, start_date, end_date, location_select)
