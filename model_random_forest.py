@@ -174,11 +174,10 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X = load_all_data(data_folder)
     interpolate_data(X, start_date, end_date)
 
-    # Check if the field is valid
+    """
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
 
-    # Change target
     X.dropna(axis=0, subset=[field], inplace=True)
     y = X[field]
     X.drop([field], axis=1, inplace=True)
@@ -186,7 +185,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
 
-    # Change "cardinality" number
     categorical_cols = [cname for cname in X_train_full.columns if X_train_full[cname].nunique() < 20 and
                         X_train_full[cname].dtype == "object"]
     numerical_cols = [
@@ -196,10 +194,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
-    # Define the path for the saved model
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
-    # Preprocessor settings / strategies
     numerical_transformer = SimpleImputer(strategy='most_frequent')
     categorical_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
@@ -212,14 +208,11 @@ def predict_random_forest(field, start_date, end_date, location_select):
             ('cat', categorical_transformer, categorical_cols)
         ])
 
-    # Change Model settings
     model = RandomForestRegressor(n_estimators=100, random_state=0)
 
-    # Pipeline with preprocessor and model
     pipeline = Pipeline(
         steps=[('preprocessor', preprocessor), ('model', model)])
 
-    # Check if there is an existing saved model
     if os.path.exists(model_save_path):
         print("Loading model from previous save...")
         pipeline = joblib.load(model_save_path)
@@ -235,20 +228,16 @@ def predict_random_forest(field, start_date, end_date, location_select):
         joblib.dump(pipeline, model_save_path)
         print("Model saved successfully.")
 
-    # Change X set and do predictions
     preds = pipeline.predict(X_valid)  # Use X_valid for validation if needed
     print(preds)
 
-    # Calculate mean absolute error
     mae_score = mean_absolute_error(
         preds, y_valid)  # Use y_valid for validation
     print('MAE:', mae_score)
 
-    # Calculate mean squared error (MSE)
     mse_score = mean_squared_error(preds, y_valid)
     print('MSE:', mse_score)
 
-    # Calculate root mean squared error (RMSE)
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
@@ -258,6 +247,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     display_table(X_valid, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
+    """
 
 
 def display_table(X, preds, start_date, end_date, location_select):
