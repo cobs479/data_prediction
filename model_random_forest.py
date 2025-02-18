@@ -28,7 +28,7 @@ def interpolate_data(weather_data, start_date, end_date):
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
     weather_data = pd.merge(weather_data, complete_weather_data, on='Datetime', how='outer', indicator=True)
     
-    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', '_merge']
     numeric_columns = [col for col in weather_data.columns if col not in exclude_columns]
     
     weather_data['Timestamp'] = weather_data['Datetime'].astype(np.int64) // 10**9
