@@ -59,6 +59,11 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X_train = X_train_full[cols].copy()
     X_valid = X_valid_full[cols].copy()
 
+    print("Columns in X_train_full:", X_train_full.columns)
+    print("Columns in X_valid_full:", X_valid_full.columns)
+    print("Columns in X_train:", X_train.columns)
+    print("Columns in X_valid:", X_valid.columns)
+
     # Define the path for the saved model
     model_save_path = 'saved_model/RF_' + field + '.joblib'
 
