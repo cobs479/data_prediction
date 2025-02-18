@@ -4,6 +4,8 @@ import os
 import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
+import glob
+from scipy.interpolate import interp1d
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
@@ -14,14 +16,53 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
+def interpolate_data():
+
+    data_folder = 'data'
+    
+    weather_data = load_all_data(data_folder)
+    
+    # Step 3: Convert 'Datetime' column to proper datetime format
+    weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
+    
+    # Step 4: Ensure data is sorted by time
+    weather_data = weather_data.sort_values(by='Datetime').reset_index(drop=True)
+    
+    # Step 5: Define the dynamic date range for interpolation
+    start_date = "2024-01-01 00:00"  # Example start date (modify as needed)
+    end_date = "2024-12-31 23:00"    # Example end date (modify as needed)
+    date_range = pd.date_range(start=start_date, end=end_date, freq='H')
+    
+    # Step 6: Create a complete time index DataFrame
+    complete_weather_data = pd.DataFrame({'Datetime': date_range})
+    
+    # Merge to ensure we have a full dataset with all timestamps
+    weather_data = pd.merge(complete_weather_data, weather_data, on='Datetime', how='left')
+    
+    # Step 7: Identify numerical columns for interpolation (excluding datetime and categorical columns)
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum']
+    numeric_columns = [col for col in weather_data.columns if col not in exclude_columns]
+    
+    # Step 8: Perform linear interpolation on missing data
+    for col in numeric_columns:
+        weather_data[col] = weather_data[col].interpolate(method='linear', limit_direction='both')
+    
+    # Step 9: Save the final interpolated dataset
+    output_file = "/path/to/output/interpolated_weather_data.csv"  # Change this as needed
+    weather_data.to_csv(output_file, index=False)
+    
+    print(f"Interpolated weather data saved to: {output_file}")
+
+
 def load_all_data(data_folder='data'):
     all_files = [f for f in os.listdir(data_folder) if f.startswith('weather_') and f.endswith('.csv')]
     all_files.sort()
     
     data_frames = []
     for file in all_files:
-        df = pd.read_csv(os.path.join(data_folder, file))
-        df['Year'] = int(file.split('_')[1].split('.')[0])  # Extract year from filename
+        df = pd.read_csv(os.path.join(data_folder, file), parse_dates=[['Year', 'Month', 'Day', 'Hour']], dayfirst=True)
+        df['Year'] = int(file.split('_')[1].split('.')[0])
+        df.rename(columns={'Year_Month_Day_Hour': 'Datetime'}, inplace=True)
         data_frames.append(df)
 
     st.warning("Loading all data")
@@ -84,14 +125,14 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
     # Check if there is an existing saved model
     if os.path.exists(model_save_path):
-        print("Loading model from previous save...")
-        pipeline = joblib.load(model_save_path)
+        #print("Loading model from previous save...")
+        #pipeline = joblib.load(model_save_path)
 
         #Must force rebuild model if the columns are different
-        #print("Building and training a new model...")
-        #pipeline.fit(X_train, y_train)
-        #joblib.dump(pipeline, model_save_path)
-        #print("Model saved successfully.")
+        print("Building and training a new model...")
+        pipeline.fit(X_train, y_train)
+        joblib.dump(pipeline, model_save_path)
+        print("Model saved successfully.")
     else:
         print("Building and training a new model...")
         pipeline.fit(X_train, y_train)
