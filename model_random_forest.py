@@ -94,6 +94,7 @@ def interpolate_data(weather_data, start_date, end_date):
     return weather_data
 
     """
+    # Check for interpolation
     st.success("Interpolation Completed")
     st.dataframe(weather_data)
 
