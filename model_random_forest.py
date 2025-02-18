@@ -34,7 +34,7 @@ def interpolate_data(weather_data):
     weather_data['Timestamp'] = weather_data['Datetime'].astype(np.int64) // 10**9
 
     air_quality_vars = ["PM10", "PM25", "CO", "SO2", "NO2", "O3"]  # Air quality variables
-    other_vars = ["Temperature", "Humidity", "WindSpeed", "WindDirection", "Evaporation", "GlobalRadiation", "SolarRadiation", "Usage", "MaxDemand", "Bill"]  # Other climate data
+    #other_vars = ["Temperature", "Humidity", "WindSpeed", "WindDirection", "Evaporation", "GlobalRadiation", "SolarRadiation", "Usage", "MaxDemand", "Bill"]  # Other climate data
 
     for col in numeric_columns:
         known_data = weather_data.dropna(subset=[col])  # Get only known values
