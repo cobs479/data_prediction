@@ -45,24 +45,35 @@ def interpolate_data(weather_data):
             print(f"Skipping {col} - No known values for interpolation")
             continue  # Skip if no known values exist
     
-        # Ensure all values in y are numeric and drop non-numeric data
-        known_data[col] = pd.to_numeric(known_data[col], errors='coerce')  # Convert to float, set errors to NaN
-        known_data = known_data.dropna(subset=[col])  # Remove rows with NaNs in y
+        # Convert to numeric and drop any non-numeric values
+        known_data[col] = pd.to_numeric(known_data[col], errors='coerce')
+        known_data = known_data.dropna(subset=[col])  # Drop remaining NaNs
     
-        # Check again if we still have data after cleaning
-        if known_data.empty:
-            print(f"Skipping {col} - All values were non-numeric or missing")
+        # Debug: Check number of valid data points
+        if len(known_data) < 2:  # At least 2 points needed for interpolation
+            print(f"Skipping {col} - Not enough data points for interpolation")
             continue
     
+        # Ensure no duplicate timestamps
+        known_data = known_data.drop_duplicates(subset=['Timestamp'])
+    
         X = known_data['Timestamp'].values  # Convert datetime to numerical format
-        y = known_data[col].values.astype(np.float64)  # Convert to float explicitly
+        y = known_data[col].values.astype(np.float64)  # Ensure float64
     
         # Create interpolation function using linear extrapolation
-        interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate')
+        try:
+            interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate', bounds_error=False)
+        except Exception as e:
+            print(f"Skipping {col} due to interpolation error: {e}")
+            continue
     
         # Apply interpolation to missing values
         missing_indices = weather_data[weather_data[col].isna()].index
-        weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+        interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
+    
+        # Replace NaN or inf values with valid interpolations
+        interpolated_values = np.where(np.isfinite(interpolated_values), interpolated_values, np.nan)
+        weather_data.loc[missing_indices, col] = interpolated_values
 
     st.success(f"Interpolated")
     st.dataframe(weather_data)
