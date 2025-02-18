@@ -24,15 +24,9 @@ def interpolate_data(weather_data):
     start_date = "2024-01-01 00:00"  # Example start date (modify as needed)
     end_date = "2024-01-31 23:00"    # Example end date (modify as needed)
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
-
-    st.success(f"Original")
-    st.dataframe(weather_data)
     
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
     weather_data = pd.merge(weather_data, complete_weather_data, on='Datetime', how='outer')
-
-    st.success(f"After merge")
-    st.dataframe(weather_data)
     
     exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1']
     numeric_columns = [col for col in weather_data.columns if col not in exclude_columns]
@@ -77,6 +71,31 @@ def interpolate_data(weather_data):
 
     st.success(f"Interpolated")
     st.dataframe(weather_data)
+
+    weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
+    
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp', 'Timestamp']
+    weather_variables = [col for col in weather_data.columns if col not in exclude_columns]
+    
+    known_data = weather_data[weather_data['Datetime'] < '2024-01-01']  # Actual (2017-2023)
+    interpolated_data = weather_data[weather_data['Datetime'] >= '2024-01-01']  # Interpolated (2024)
+    
+    num_vars = len(weather_variables)
+    fig, axes = plt.subplots(nrows=num_vars, ncols=1, figsize=(12, 4 * num_vars), sharex=True)
+    
+    for i, variable in enumerate(weather_variables):
+        ax = axes[i]
+        ax.plot(known_data['Datetime'], known_data[variable], 'b-', label="Actual Data (2017-2023)")
+        ax.plot(interpolated_data['Datetime'], interpolated_data[variable], 'r--', label="Interpolated Data (2024)")
+        ax.set_ylabel(variable)
+        ax.legend()
+        ax.grid()
+    
+    plt.xlabel("Date")
+    plt.suptitle("Interpolation of Weather Variables from 2017 to 2024")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
 
 
 def load_all_data(data_folder='data'):
