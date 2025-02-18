@@ -267,6 +267,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     st.dataframe(X_valid)
     st.dataframe(X_predict)
     
+    """
     preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
     print(preds)
 
@@ -284,6 +285,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     display_table(X_predict, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
+    """
 
 
 def display_table(X, preds, start_date, end_date, location_select):
