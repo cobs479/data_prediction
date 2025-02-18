@@ -1,9 +1,9 @@
 import pandas as pd
-import joblib
+import joblib  # For saving and loading model
 import os
+import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
-import numpy as np
 import glob
 from scipy.interpolate import interp1d
 from sklearn.compose import ColumnTransformer
@@ -11,9 +11,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import mean_absolute_error
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from xgboost import XGBRegressor
 
 
 def interpolate_data(weather_data, start_date, end_date):
