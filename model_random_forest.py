@@ -174,9 +174,12 @@ def predict_random_forest(field, start_date, end_date, location_select):
     data_folder = 'data'
     
     X, first_year, last_year = load_all_data(data_folder)
-    interpolate_data(X, start_date, end_date)
 
-    st.success(f"First year {first_year} and Last year {last_year}")
+    if pd.to_datetime(start_date.strftime('%Y')) > pd.to_datetime(last_year) or pd.to_datetime(end_date.strftime('%Y')) < pd.to_datetime(first_year)
+        interpolate_data(X, start_date, end_date)
+        st.success("Not within range")
+    else
+        st.success("Within range")
 
     """
     if field not in X.columns:
