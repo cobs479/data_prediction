@@ -232,7 +232,7 @@ def display_graph(X, preds, start_date, end_date, location_select):
         st.error(f"No predictions found for selected location ({location_select}) from {start_date_str} to {end_date_str}")
         return
 
-    filtered_data = filtered_data.sort_values(by='DateTime')
+    filtered_data = filtered_data.sort_values(by='Datetime')
 
     # Extract unique locations
     unique_locations = filtered_data['Location'].unique()
@@ -245,7 +245,7 @@ def display_graph(X, preds, start_date, end_date, location_select):
         loc_data = filtered_data[filtered_data['Location'] == loc]
         loc_preds = filtered_preds[filtered_data['Location'] == loc]
 
-        ax.plot(loc_data['DateTime'], loc_preds, label=loc, marker='o')
+        ax.plot(loc_data['Datetime'], loc_preds, label=loc, marker='o')
 
     # Set graph labels and title
     ax.set_title(f'Predicted Target from {start_date_str} to {end_date_str}')
