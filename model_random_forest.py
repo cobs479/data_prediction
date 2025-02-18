@@ -190,15 +190,11 @@ def predict_random_forest(field, start_date, end_date, location_select):
     y = X[field]
     X.drop([field], axis=1, inplace=True)
 
-    #X['CO'] = pd.to_numeric(X['CO'], errors='coerce')
-    #X['CO'] = X['CO'].fillna(0)
-
-    X.fillna(0, inplace=True)
+    X['CO'] = pd.to_numeric(X['CO'], errors='coerce')
+    X['CO'] = X['CO'].fillna(0)
 
     y_predict = X_predict[field]
     X_predict.drop([field], axis=1, inplace=True)
-
-    X_predict.fillna(0, inplace=True)
 
     X_train_full, X_valid_full, y_train, y_valid = train_test_split(
         X, y, train_size=0.8, test_size=0.2, random_state=0)
