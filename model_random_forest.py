@@ -219,6 +219,9 @@ def predict_random_forest(field, start_date, end_date, location_select):
             "Petaling Jaya": "PJ",
             "Cheras": "KL"
         }
+
+    st.dataframe(X_valid)
+    st.dataframe(X_predict)
     
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
@@ -263,11 +266,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
         pipeline.fit(X_train, y_train)
         joblib.dump(pipeline, model_save_path)
         print("Model saved successfully.")
-
-    st.dataframe(X_valid)
-    st.dataframe(X_predict)
     
-    """
     preds = pipeline.predict(X_predict)  # Use X_valid for validation if needed
     print(preds)
 
@@ -285,7 +284,6 @@ def predict_random_forest(field, start_date, end_date, location_select):
     display_table(X_predict, preds, start_date, end_date, location_select)
 
     st.success(f"Prediction ended")
-    """
 
 
 def display_table(X, preds, start_date, end_date, location_select):
