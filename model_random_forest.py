@@ -39,19 +39,27 @@ def interpolate_data(weather_data):
     
     weather_data['Timestamp'] = weather_data['Datetime'].astype(np.int64) // 10**9
 
-    # Step 8: Interpolate & extrapolate missing values based on known data (2017-2023)
     for col in numeric_columns:
         known_data = weather_data.dropna(subset=[col])  # Get only known values
         if known_data.empty:
             print(f"Skipping {col} - No known values for interpolation")
             continue  # Skip if no known values exist
-
+    
+        # Ensure all values in y are numeric and drop non-numeric data
+        known_data[col] = pd.to_numeric(known_data[col], errors='coerce')  # Convert to float, set errors to NaN
+        known_data = known_data.dropna(subset=[col])  # Remove rows with NaNs in y
+    
+        # Check again if we still have data after cleaning
+        if known_data.empty:
+            print(f"Skipping {col} - All values were non-numeric or missing")
+            continue
+    
         X = known_data['Timestamp'].values  # Convert datetime to numerical format
-        y = known_data[col].values
-
+        y = known_data[col].values.astype(np.float64)  # Convert to float explicitly
+    
         # Create interpolation function using linear extrapolation
         interp_func = interp1d(X, y, kind='linear', fill_value='extrapolate')
-
+    
         # Apply interpolation to missing values
         missing_indices = weather_data[weather_data[col].isna()].index
         weather_data.loc[missing_indices, col] = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
