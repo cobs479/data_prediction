@@ -175,18 +175,13 @@ def predict_random_forest(field, start_date, end_date, location_select):
     
     X, first_year, last_year = load_all_data(data_folder)
     
-    if first_year <= pd.to_datetime(start_date.strftime('%Y-%m-%d')).year <= last_year and first_year <= pd.to_datetime(end_date.strftime('%Y-%m-%d')).year <= last_year:
+    if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
+        #X_predict = pd.read_csv(f'data/weather_{end_date.year}.csv')
         st.warning("✅ The date range is within the year range.")
     else:
+        #X_predict = interpolate_data(X, start_date, end_date)
         st.warning("❌ The date range is NOT within the year range.")
 
-    """
-    if pd.to_datetime(start_date.strftime('%Y')) > pd.to_datetime(last_year) or pd.to_datetime(end_date.strftime('%Y')) < pd.to_datetime(first_year):
-        #interpolate_data(X, start_date, end_date)
-        st.success("Not within range")
-    else:
-        st.success("Within range")
-    """
     """
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
