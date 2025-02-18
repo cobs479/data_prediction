@@ -36,19 +36,18 @@ def interpolate_data(weather_data):
     air_quality_vars = ["PM10", "PM25", "CO", "SO2", "NO2", "O3"]  # Air quality variables
     other_vars = ["Temperature", "Humidity", "WindSpeed", "WindDirection", "Evaporation", "GlobalRadiation", "SolarRadiation", "Usage", "MaxDemand", "Bill"]  # Other climate data
     
-    # Step 6: Interpolation process
     for col in numeric_columns:
         known_data = weather_data.dropna(subset=[col])  # Get only known values
         if known_data.empty:
             print(f"Skipping {col} - No known values for interpolation")
-            continue  # Skip if no known values exist
+            continue  
     
         # Convert to numeric and drop NaNs
         known_data[col] = pd.to_numeric(known_data[col], errors='coerce')
         known_data = known_data.dropna(subset=[col])
     
         # Debug: Check number of valid data points
-        if len(known_data) < 3:  # At least 3 points needed for better interpolation
+        if len(known_data) < 4:  # At least 4 points needed for interpolation
             print(f"Skipping {col} - Not enough data points for interpolation")
             continue
     
@@ -60,68 +59,63 @@ def interpolate_data(weather_data):
         y = known_data[col].values.astype(np.float64)
     
         try:
-            # Use different interpolation methods for air quality and other variables
             if col in air_quality_vars:
-                interp_func = CubicSpline(X, y, extrapolate=True)  # Cubic spline for air quality variables
+                # Use LOESS smoothing for air quality data (better at following patterns)
+                smooth_values = lowess(y, X, frac=0.1, return_sorted=False)
+                interp_func = interp1d(X, smooth_values, kind='linear', fill_value='extrapolate', bounds_error=False)
+    
             else:
-                interp_func = interp1d(X, y, kind='quadratic', fill_value='extrapolate', bounds_error=False)  # Quadratic interpolation for other variables
+                # Use Polynomial Regression for other data
+                poly_fit = np.polyfit(X, y, 3)  # 3rd-degree polynomial
+                interp_func = np.poly1d(poly_fit)
     
             # Apply interpolation to missing values
             missing_indices = weather_data[weather_data[col].isna()].index
             interpolated_values = interp_func(weather_data.loc[missing_indices, 'Timestamp'].values)
     
-            # Step 7: Prevent unrealistic extreme values (IQR method)
+            # Step 7: Prevent extreme values using IQR
             q1, q3 = np.percentile(y, [25, 75])
             iqr = q3 - q1
             lower_bound = q1 - 1.5 * iqr
             upper_bound = q3 + 1.5 * iqr
             interpolated_values = np.clip(interpolated_values, lower_bound, upper_bound)
     
-            # Assign interpolated values to the dataset
+            # Assign interpolated values
             weather_data.loc[missing_indices, col] = interpolated_values
     
         except Exception as e:
             print(f"Skipping {col} due to interpolation error: {e}")
             continue
     
-    # Step 8: Display results in Streamlit
     st.success("Interpolation Completed")
     st.dataframe(weather_data)
 
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
 
-    # Step 3: Identify numerical weather variables (exclude non-numeric columns)
     exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp', 'Year', 'Timestamp']
     weather_variables = [col for col in weather_data.columns if col not in exclude_columns]
     
-    # Step 4: Separate actual vs. interpolated data
     known_data = weather_data[weather_data['Datetime'] < '2024-01-01'].copy()  # Actual (2017-2023)
     interpolated_data = weather_data[weather_data['Datetime'] >= '2024-01-01'].copy()  # Interpolated (2024)
     
-    # Step 5: Ensure all variables are numeric (Convert to float and remove NaNs)
     for variable in weather_variables:
         known_data[variable] = pd.to_numeric(known_data[variable], errors='coerce')
         interpolated_data[variable] = pd.to_numeric(interpolated_data[variable], errors='coerce')
     
-    # Debug: Check if any data exists before plotting
     for variable in weather_variables:
         num_known = known_data[variable].count()
         num_interpolated = interpolated_data[variable].count()
     
-    # Step 6: Create subplots
     num_vars = len(weather_variables)
     fig, axes = plt.subplots(nrows=num_vars, ncols=1, figsize=(12, 4 * num_vars), sharex=True)
     
-    # If only one subplot, make sure it's iterable
     if num_vars == 1:
         axes = [axes]
     
-    # Step 7: Plot each weather variable
     plotted_any = False  # Track if any graph is plotted
     for i, variable in enumerate(weather_variables):
         ax = axes[i]
     
-        # Drop NaN values to avoid plotting errors
         known_plot = known_data[['Datetime', variable]].dropna()
         interp_plot = interpolated_data[['Datetime', variable]].dropna()
     
@@ -137,7 +131,6 @@ def interpolate_data(weather_data):
         ax.grid()
         plotted_any = True  # At least one plot was drawn
     
-    # Step 8: Display the figure in Streamlit
     if plotted_any:
         plt.xlabel("Date")
         plt.suptitle("Interpolation of Weather Variables from 2017 to 2024")
