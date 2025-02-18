@@ -21,8 +21,8 @@ def interpolate_data(weather_data, start_date, end_date):
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
     weather_data = weather_data.sort_values(by='Datetime').reset_index(drop=True)
     
-    start_date = "2024-01-01 00:00"  # Example start date (modify as needed)
-    end_date = "2024-01-31 23:00"    # Example end date (modify as needed)
+    start_date = start_date + " 00:00"  # Example start date (modify as needed)
+    end_date = end_date + " 23:00"    # Example end date (modify as needed)
     date_range = pd.date_range(start=start_date, end=end_date, freq='H')
     
     complete_weather_data = pd.DataFrame({'Datetime': date_range})
