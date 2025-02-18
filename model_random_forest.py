@@ -163,16 +163,8 @@ def predict_random_forest(field, start_date, end_date, location_select):
 
 
 def display_table(X, preds, start_date, end_date, location_select):
-    # Ensure Hour column is properly formatted as HH:MM
-    X['Hour'] = X['Hour'].astype(str).str.zfill(4)
-    X['Formatted Hour'] = X['Hour'].str[:2] + \
-        ":" + X['Hour'].str[2:]
-
     # Convert date columns into a full datetime format (YYYY-MM-DD HH:MM)
-    X['DateTime'] = pd.to_datetime(
-        X[['Year', 'Month', 'Day']].astype(str).agg('-'.join, axis=1) +
-        ' ' + X['Formatted Hour']
-    )
+    X['Datetime'] = pd.to_datetime(X['Datetime'])
 
     # Mapping numerical locations to readable names
     location_mapping = {
@@ -184,7 +176,7 @@ def display_table(X, preds, start_date, end_date, location_select):
 
     # Create a DataFrame for display
     results_df = pd.DataFrame({
-        'Date-Time': X['DateTime'],
+        'Date-Time': X['Datetime'],
         'Location': X['Location'],
         'Predicted Value': preds
     })
@@ -215,7 +207,7 @@ def display_graph(X, preds, start_date, end_date, location_select):
     end_date = pd.to_datetime(end_date)
 
     # Convert date columns into full datetime format
-    X['DateTime'] = pd.to_datetime(X[['Year', 'Month', 'Day']])
+    X['Datetime'] = pd.to_datetime(X['Datetime'])
 
     # **Mapping numerical locations to readable names (Same as display_table)**
     location_mapping = {
@@ -230,8 +222,8 @@ def display_graph(X, preds, start_date, end_date, location_select):
     end_date_str = end_date.strftime('%d/%m/%Y')
 
     # Filter data within the selected date range
-    mask = (X['DateTime'] >= start_date) & (
-        X['DateTime'] <= end_date) & (X['Location'] == location_select)
+    mask = (X['Datetime'] >= start_date) & (
+        X['Datetime'] <= end_date) & (X['Location'] == location_select)
     filtered_data = X[mask]
     filtered_preds = preds[mask]
 
