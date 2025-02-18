@@ -21,6 +21,7 @@ def load_all_data(data_folder='data'):
     data_frames = []
     for file in all_files:
         df = pd.read_csv(os.path.join(data_folder, file))
+        df.drop('LocationInNum.1', axis=1, inplace=True)
         df['Year'] = int(file.split('_')[1].split('.')[0])  # Extract year from filename
         data_frames.append(df)
 
