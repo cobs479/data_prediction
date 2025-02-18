@@ -176,11 +176,14 @@ def predict_random_forest(field, start_date, end_date, location_select):
     X, first_year, last_year = load_all_data(data_folder)
     
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
-        X_predict = pd.read_csv(f'data/weather_{end_date.year}.csv')
+        X_predict = pd.read_csv(f'data/weather_{end_date.year}.csv', parse_dates=[['Year', 'Month', 'Day', 'Hour']], dayfirst=True)
+        X_predict['Year'] = int(end_date.year)
         st.warning("✅ The date range is within the year range.")
     else:
         X_predict = interpolate_data(X, start_date, end_date)
         st.warning("❌ The date range is NOT within the year range.")
+
+    X_predict.rename(columns={'Year_Month_Day_Hour': 'Datetime'}, inplace=True)
 
     if field not in X.columns:
         raise ValueError(f"Field '{field}' not found in the data columns!")
@@ -210,7 +213,7 @@ def predict_random_forest(field, start_date, end_date, location_select):
     if first_year <= start_date.year <= last_year and first_year <= end_date.year <= last_year:
         X_predict = X_predict[cols].copy()
     else:
-        X_predict.drop(['DateTemp', 'Date', 'Year', 'Month', 'Day', 'Hour', 'Location', 'LocationInNum'], axis=1, inplace=True)
+        X_predict.drop(['DateTemp', 'Date', 'Location', 'LocationInNum'], axis=1, inplace=True)
 
         location_in_num_mapping = {
                 "Batu Muda": 1,
