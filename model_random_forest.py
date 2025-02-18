@@ -75,7 +75,7 @@ def interpolate_data(weather_data):
     weather_data['Datetime'] = pd.to_datetime(weather_data['Datetime'])
 
     # Step 3: Identify numerical weather variables (exclude non-numeric columns)
-    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp', 'Timestamp']
+    exclude_columns = ['Datetime', 'Location', 'LocationInNum', 'LocationInNum.1', 'Date', 'DateTemp']
     weather_variables = [col for col in weather_data.columns if col not in exclude_columns]
     
     # Step 4: Separate actual vs. interpolated data
@@ -87,11 +87,22 @@ def interpolate_data(weather_data):
         known_data[variable] = pd.to_numeric(known_data[variable], errors='coerce')
         interpolated_data[variable] = pd.to_numeric(interpolated_data[variable], errors='coerce')
     
+    # Debug: Check if any data exists before plotting
+    for variable in weather_variables:
+        num_known = known_data[variable].count()
+        num_interpolated = interpolated_data[variable].count()
+        st.write(f"{variable}: Known = {num_known}, Interpolated = {num_interpolated}")
+    
     # Step 6: Create subplots
     num_vars = len(weather_variables)
     fig, axes = plt.subplots(nrows=num_vars, ncols=1, figsize=(12, 4 * num_vars), sharex=True)
     
+    # If only one subplot, make sure it's iterable
+    if num_vars == 1:
+        axes = [axes]
+    
     # Step 7: Plot each weather variable
+    plotted_any = False  # Track if any graph is plotted
     for i, variable in enumerate(weather_variables):
         ax = axes[i]
     
@@ -99,8 +110,8 @@ def interpolate_data(weather_data):
         known_plot = known_data[['Datetime', variable]].dropna()
         interp_plot = interpolated_data[['Datetime', variable]].dropna()
     
-        if known_plot.empty or interp_plot.empty:
-            print(f"Skipping {variable} - No valid data to plot")
+        if known_plot.empty and interp_plot.empty:
+            st.write(f"Skipping {variable} - No valid data to plot")
             continue
     
         ax.plot(known_plot['Datetime'], known_plot[variable], 'b-', label="Actual Data (2017-2023)")
@@ -109,15 +120,17 @@ def interpolate_data(weather_data):
         ax.set_ylabel(variable)
         ax.legend()
         ax.grid()
+        plotted_any = True  # At least one plot was drawn
     
-    # Step 8: Customize the figure
-    plt.xlabel("Date")
-    plt.suptitle("Interpolation of Weather Variables from 2017 to 2024")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.show()
-
-    st.success("Interpolated Graph")
+    # Step 8: Display the figure in Streamlit
+    if plotted_any:
+        plt.xlabel("Date")
+        plt.suptitle("Interpolation of Weather Variables from 2017 to 2024")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        st.pyplot(fig)  # ✅ Streamlit way to display Matplotlib figures
+    else:
+        st.write("No valid data available for any variable. No graph drawn.")
     
 
 def load_all_data(data_folder='data'):
