@@ -255,8 +255,6 @@ def predict_xgboost(field, start_date, end_date, location_select):
     X_valid = pipeline.transform(X_valid)
     X_predict = pipeline.transform(X_predict)
 
-    X_predict = pd.DataFrame(X_predict, columns=cols)
-
     if os.path.exists(model_save_path):
         print("Loading model from previous save...")
         model = joblib.load(model_save_path)
@@ -292,8 +290,10 @@ def predict_xgboost(field, start_date, end_date, location_select):
     rmse_score = np.sqrt(mse_score)
     print('RMSE:', rmse_score)
 
-    #st.dataframe(X_valid)
-    #st.dataframe(X_predict)
+    X_predict = pd.DataFrame(X_predict, columns=cols)
+
+    st.dataframe(X_valid)
+    st.dataframe(X_predict)
 
     display_graph(X_predict, preds, start_date, end_date, location_select)
     display_table(X_predict, preds, start_date, end_date, location_select)
